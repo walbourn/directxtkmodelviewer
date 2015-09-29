@@ -95,8 +95,9 @@ private:
     DirectX::SimpleMath::Matrix                     m_proj;
 
     DirectX::SimpleMath::Vector3                    m_cameraPos;
-    DirectX::SimpleMath::Vector3                    m_clearColor;
-    DirectX::SimpleMath::Vector3                    m_gridColor;
+    DirectX::SimpleMath::Vector4                    m_clearColor;
+    DirectX::SimpleMath::Vector4                    m_gridColor;
+    DirectX::SimpleMath::Vector4                    m_hudColor;
 
     float                                           m_pitch;
     float                                           m_yaw;

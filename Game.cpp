@@ -33,6 +33,7 @@ Game::Game() :
 
     m_clearColor = Colors::CornflowerBlue.v;
     m_gridColor = Colors::White.v;
+    m_hudColor = Colors::White.v;
 
     *m_szModelName = 0;
     *m_szStatus = 0;
@@ -138,20 +139,23 @@ void Game::Update(DX::StepTimer const& timer)
 
     if (m_keyboardTracker.pressed.B)
     {
-        if (m_clearColor == Vector3(Colors::CornflowerBlue.v))
+        if (m_clearColor == Vector4(Colors::CornflowerBlue.v))
         {
             m_clearColor = Colors::Black.v;
             m_gridColor = Colors::Yellow.v;
+            m_hudColor = Colors::Yellow.v;
         }
-        else if (m_clearColor == Vector3(Colors::Black.v))
+        else if (m_clearColor == Vector4(Colors::Black.v))
         {
             m_clearColor = Colors::White.v;
             m_gridColor = Colors::Black.v;
+            m_hudColor = Colors::Green.v;
         }
         else
         {
             m_clearColor = Colors::CornflowerBlue.v;
             m_gridColor = Colors::White.v;
+            m_hudColor = Colors::White.v;
         }
     }
 
@@ -254,7 +258,7 @@ void Game::Render()
         {
             m_spriteBatch->Begin();
 
-            m_fontComic->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), Colors::White);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_hudColor);
 
             m_spriteBatch->End();
         }
