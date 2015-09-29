@@ -19,13 +19,23 @@ Game::Game() :
     m_window(0),
     m_outputWidth(800),
     m_outputHeight(600),
-    m_featureLevel(D3D_FEATURE_LEVEL_9_1),
-    m_gridScale(10.f),
-    m_showGrid(false),
+    m_featureLevel(D3D_FEATURE_LEVEL_10_0),
     m_pitch(0.f),
-    m_yaw(0.f)
+    m_yaw(0.f),
+    m_gridScale(10.f),
+    m_fov(XM_PI / 4.f),
+    m_showHud(true),
+    m_showGrid(true),
+    m_wireframe(false),
+    m_reloadModel(false)
 {
     m_cameraPos = START_POSITION.v;
+
+    m_clearColor = Colors::CornflowerBlue.v;
+    m_gridColor = Colors::White.v;
+
+    *m_szModelName = 0;
+    *m_szStatus = 0;
 }
 
 // Initialize the Direct3D resources required to run.
@@ -38,13 +48,6 @@ void Game::Initialize(HWND window, int width, int height)
     CreateDevice();
 
     CreateResources();
-
-    // TODO: Change the timer settings if you want something other than the default variable timestep mode.
-    // e.g. for 60 FPS fixed timestep update logic, call:
-    /*
-    m_timer.SetFixedTimeStep(true);
-    m_timer.SetTargetElapsedSeconds(1.0 / 60);
-    */
 
     m_gamepad.reset(new GamePad);
 
@@ -68,9 +71,11 @@ void Game::Tick()
 // Updates the world
 void Game::Update(DX::StepTimer const& timer)
 {
+    if (m_reloadModel)
+        LoadModel();
+
     float elapsedTime = float(timer.GetElapsedSeconds());
 
-    // TODO: Add your game logic here
     auto kb = m_keyboard->GetState();
 
     // Camera movement
@@ -103,8 +108,7 @@ void Game::Update(DX::StepTimer const& timer)
     // Other keyboard controls
     if (kb.Home)
     {
-        m_cameraPos = START_POSITION.v;
-        m_pitch = m_yaw = 0.f;
+        CameraHome();
     }
 
     if (m_showGrid)
@@ -125,6 +129,36 @@ void Game::Update(DX::StepTimer const& timer)
 
     if (m_keyboardTracker.pressed.G)
         m_showGrid = !m_showGrid;
+
+    if (m_keyboardTracker.pressed.V)
+        m_wireframe = !m_wireframe;
+
+    if (m_keyboardTracker.pressed.H)
+        m_showHud = !m_showHud;
+
+    if (m_keyboardTracker.pressed.B)
+    {
+        if (m_clearColor == Vector3(Colors::CornflowerBlue.v))
+        {
+            m_clearColor = Colors::Black.v;
+            m_gridColor = Colors::Yellow.v;
+        }
+        else if (m_clearColor == Vector3(Colors::Black.v))
+        {
+            m_clearColor = Colors::White.v;
+            m_gridColor = Colors::Black.v;
+        }
+        else
+        {
+            m_clearColor = Colors::CornflowerBlue.v;
+            m_gridColor = Colors::White.v;
+        }
+    }
+
+    if (m_keyboardTracker.pressed.O)
+    {
+        PostMessage(m_window, WM_USER, 0, 0);
+    }
 
     // Mouse controls
     auto mouse = m_mouse->GetState();
@@ -199,7 +233,6 @@ void Game::Render()
 
     Clear();
 
-    // TODO: Add your rendering code here
     if (m_showGrid)
     {
         DrawGrid();
@@ -215,7 +248,16 @@ void Game::Render()
     }
     else
     {
-        // TODO -
+        m_model->Draw( m_d3dContext.Get(), *m_states, m_world, m_view, m_proj, m_wireframe );
+
+        if (*m_szStatus && m_showHud)
+        {
+            m_spriteBatch->Begin();
+
+            m_fontComic->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), Colors::White);
+
+            m_spriteBatch->End();
+        }
     }
 
     Present();
@@ -225,7 +267,9 @@ void Game::Render()
 void Game::Clear()
 {
     // Clear the views
-    m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), Colors::CornflowerBlue);
+    XMVECTORF32 clearColor;
+    clearColor.v = m_clearColor;
+    m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
     m_d3dContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_d3dContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
@@ -258,17 +302,14 @@ void Game::OnActivated()
 {
     m_keyboardTracker.Reset();
     m_mouseButtonTracker.Reset();
-    // TODO: Game is becoming active window
 }
 
 void Game::OnDeactivated()
 {
-    // TODO: Game is becoming background window
 }
 
 void Game::OnSuspending()
 {
-    // TODO: Game is being power-suspended (or minimized)
 }
 
 void Game::OnResuming()
@@ -276,8 +317,6 @@ void Game::OnResuming()
     m_timer.ResetElapsedTime();
     m_keyboardTracker.Reset();
     m_mouseButtonTracker.Reset();
-
-    // TODO: Game is being power-resumed (or returning from minimize)
 }
 
 void Game::OnWindowSizeChanged(int width, int height)
@@ -286,14 +325,20 @@ void Game::OnWindowSizeChanged(int width, int height)
     m_outputHeight = std::max(height, 1);
 
     CreateResources();
+}
 
-    // TODO: Game window is being resized
+void Game::OnFileOpen(const WCHAR* filename)
+{
+    if (!filename)
+        return;
+
+    wcscpy_s(m_szModelName, filename);
+    m_reloadModel = true;
 }
 
 // Properties
 void Game::GetDefaultSize(int& width, int& height) const
 {
-    // TODO: Change to desired default window size (note minimum size is 320x200)
     width = 1280;
     height = 720;
 }
@@ -309,7 +354,6 @@ void Game::CreateDevice()
 
     static const D3D_FEATURE_LEVEL featureLevels [] =
     {
-        // TODO: Modify for supported Direct3D feature levels (see code below related to 11.1 fallback handling)
         D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_1,
@@ -357,7 +401,6 @@ void Game::CreateDevice()
             D3D11_MESSAGE_ID hide [] =
             {
                 D3D11_MESSAGE_ID_SETPRIVATEDATA_CHANGINGPARAMS,
-                // TODO: Add more message IDs here as needed 
             };
             D3D11_INFO_QUEUE_FILTER filter;
             memset(&filter, 0, sizeof(filter));
@@ -373,7 +416,6 @@ void Game::CreateDevice()
     if (SUCCEEDED(hr))
         (void)m_d3dContext.As(&m_d3dContext1);
 
-    // TODO: Initialize device dependent objects here (independent of window size)
     auto ctx = m_d3dContext.Get();
 
     m_spriteBatch.reset(new SpriteBatch(ctx));
@@ -513,19 +555,17 @@ void Game::CreateResources()
     CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
     DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, m_depthStencilView.ReleaseAndGetAddressOf()));
 
-    // TODO: Initialize windows-size dependent objects here
     m_pitch = m_yaw = 0;
     m_view = Matrix::CreateLookAt(m_cameraPos, Vector3::Zero, Vector3::UnitY);
     m_lineEffect->SetView(m_view);
 
-    // TODO - Tweaks for FOV, depth?
-    m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f, float(backBufferWidth) / float(backBufferHeight), 0.1f, 10000.f);
+    // TODO - Tweaks for depth?
+    m_proj = Matrix::CreatePerspectiveFieldOfView(m_fov, float(backBufferWidth) / float(backBufferHeight), 0.1f, 10000.f);
     m_lineEffect->SetProjection(m_proj);
 }
 
 void Game::OnDeviceLost()
 {
-    // TODO: Add Direct3D resource cleanup here
     m_spriteBatch.reset();
     m_fontConsolas.reset();
     m_fontComic.reset();
@@ -551,6 +591,99 @@ void Game::OnDeviceLost()
     CreateResources();
 }
 
+void Game::LoadModel()
+{
+    m_model.reset();
+    *m_szStatus = 0;
+    m_reloadModel = false;
+
+    if (!*m_szModelName)
+        return;
+
+    WCHAR drive[ _MAX_DRIVE ];
+    WCHAR path[ MAX_PATH ];
+    WCHAR ext[ _MAX_EXT ];
+    _wsplitpath_s( m_szModelName, drive, _MAX_DRIVE, path, MAX_PATH, nullptr, 0, ext, _MAX_EXT );
+               
+    EffectFactory fx(m_d3dDevice.Get());
+
+    if (*drive || *path)
+    {
+        WCHAR dir[MAX_PATH];
+        _wmakepath_s(dir, drive, path, nullptr, nullptr);
+        fx.SetDirectory(dir);
+    }
+
+    try
+    {
+        if (_wcsicmp(ext, L".sdkmesh") == 0)
+        {
+            // TODO - rh vs. lh?
+            m_model = Model::CreateFromSDKMESH( m_d3dDevice.Get(), m_szModelName, fx );
+        }
+        else if (_wcsicmp(ext, L".cmo") == 0)
+        {
+            // TODO - rh vs. lh?
+            m_model = Model::CreateFromCMO( m_d3dDevice.Get(), m_szModelName, fx );
+        }
+        else if (_wcsicmp(ext, L".vbo") == 0)
+        {
+            m_model = Model::CreateFromVBO( m_d3dDevice.Get(), m_szModelName );
+        }
+        else
+        {
+            // TODO: ERROR message
+            m_model.reset();
+        }
+
+        size_t nmeshes = 0;
+        size_t nverts = 0;
+        size_t nfaces = 0;
+        size_t nsubsets = 0;
+
+        std::set<ID3D11Buffer*> vbs;
+        for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+        {
+            for (auto mit = (*it)->meshParts.cbegin(); mit != (*it)->meshParts.cend(); ++mit)
+            {
+                ++nsubsets;
+
+                nfaces += ((*mit)->indexCount / 3);
+
+                ID3D11Buffer* vbptr = (*mit)->vertexBuffer.Get();
+                size_t vertexStride = (*mit)->vertexStride;
+
+                if (vbptr && (vertexStride > 0) && vbs.find(vbptr) == vbs.end())
+                {
+                    D3D11_BUFFER_DESC desc;
+                    vbptr->GetDesc(&desc);
+
+                    nverts += (desc.ByteWidth / vertexStride);
+
+                    vbs.insert(vbptr);
+                }
+            }
+            ++nmeshes;
+        }
+
+        if (nmeshes > 1)
+        {
+            swprintf_s(m_szStatus, L"     Meshes: %6Iu   Verts: %6Iu   Faces: %6Iu   Subsets: %6Iu", nmeshes, nverts, nfaces, nsubsets);
+        }
+        else
+        {
+            swprintf_s(m_szStatus, L"     Verts: %6Iu   Faces: %6Iu   Subsets: %6Iu", nverts, nfaces, nsubsets);
+        }
+    }
+    catch(...)
+    {
+        // TODO: ERROR message
+        m_model.reset();
+    }
+
+    CameraHome();
+}
+
 void Game::DrawGrid()
 {
     auto ctx = m_d3dContext.Get();
@@ -574,6 +707,8 @@ void Game::DrawGrid()
     // TODO - tweaks?
     size_t divisions = 20;
 
+    XMVECTOR color = m_gridColor;
+
     for( size_t i = 0; i <= divisions; ++i )
     {
         float fPercent = float(i) / float(divisions);
@@ -581,8 +716,8 @@ void Game::DrawGrid()
 
         Vector3 scale = xaxis * fPercent + origin;
 
-        VertexPositionColor v1( scale - yaxis, Colors::White );
-        VertexPositionColor v2( scale + yaxis, Colors::White );
+        VertexPositionColor v1( scale - yaxis, color );
+        VertexPositionColor v2( scale + yaxis, color );
         m_lineBatch->DrawLine( v1, v2 );
     }
 
@@ -593,10 +728,56 @@ void Game::DrawGrid()
 
         Vector3 scale = yaxis * fPercent + origin;
 
-        VertexPositionColor v1( scale - xaxis, Colors::White );
-        VertexPositionColor v2( scale + xaxis, Colors::White );
+        VertexPositionColor v1( scale - xaxis, color );
+        VertexPositionColor v2( scale + xaxis, color );
         m_lineBatch->DrawLine( v1, v2 );
     }
 
     m_lineBatch->End();
+}
+
+void Game::CameraHome()
+{
+    m_pitch = m_yaw = 0.f;
+
+    if (!m_model)
+    {
+        m_cameraPos = START_POSITION.v;
+    }
+    else
+    {
+        BoundingSphere sphere;
+        BoundingBox box;
+        for( auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it )
+        {
+	        if ( it == m_model->meshes.cbegin() )
+	        {
+		        sphere = (*it)->boundingSphere;
+		        box = (*it)->boundingBox;
+	        }
+	        else
+	        {
+		        BoundingSphere::CreateMerged( sphere, sphere, (*it)->boundingSphere );
+		        BoundingBox::CreateMerged( box, box, (*it)->boundingBox );
+	        }
+        }
+
+        if ( sphere.Radius < 1.f )
+        {
+	        sphere.Center = box.Center;
+	        sphere.Radius = std::max( box.Extents.x, std::max( box.Extents.y, box.Extents.z ) );
+        }
+
+        if ( sphere.Radius < 1.f )
+        {
+	        sphere.Center = XMFLOAT3(0.f,0.f,0.f);
+	        sphere.Radius = 10.f;
+        }
+
+        float distance = sphere.Radius / sinf( m_fov / 2.f );
+
+        Vector3 at = sphere.Center;
+
+        m_cameraPos = at + Vector3::Forward * distance;
+    }
 }

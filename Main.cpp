@@ -5,6 +5,8 @@
 #include "pch.h"
 #include "Game.h"
 
+#include <commdlg.h>
+
 using namespace DirectX;
 
 namespace
@@ -220,6 +222,32 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_XBUTTONUP:
     case WM_MOUSEHOVER:
         Mouse::ProcessMessage(message, wParam, lParam);
+        break;
+
+    case WM_USER:
+        if (game)
+        {
+            static DWORD s_filterIndex = 1;
+
+            WCHAR szFile[MAX_PATH];
+            szFile[0] = 0;
+
+            OPENFILENAME ofn;
+            ZeroMemory(&ofn, sizeof(OPENFILENAME));
+
+            ofn.lStructSize = sizeof(OPENFILENAME);
+            ofn.lpstrFile = szFile;
+            ofn.lpstrFile[0] = 0;
+            ofn.nMaxFile = MAX_PATH;
+            ofn.lpstrFilter = L"DirectX SDK Mesh (SDKMESH)\0*.sdkmesh\0Visual Studio Mesh (CMO)\0*.cmo\0Vertex Buffer Object (VBO)\0*.vbo\0All Files\0*.*\0";
+            ofn.nFilterIndex = s_filterIndex;
+            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+            if (GetOpenFileName(&ofn))
+            {
+                s_filterIndex = ofn.nFilterIndex;
+                game->OnFileOpen(szFile);
+            }
+        }
         break;
     }
 

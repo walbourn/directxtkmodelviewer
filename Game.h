@@ -32,6 +32,7 @@ public:
     void OnSuspending();
     void OnResuming();
     void OnWindowSizeChanged(int width, int height);
+    void OnFileOpen(const WCHAR* filename);
 
     // Properites
     void GetDefaultSize( int& width, int& height ) const;
@@ -45,7 +46,10 @@ private:
     
     void OnDeviceLost();
 
+    void LoadModel();
     void DrawGrid();
+
+    void CameraHome();
 
     // Application state
     HWND                                            m_window;
@@ -91,10 +95,19 @@ private:
     DirectX::SimpleMath::Matrix                     m_proj;
 
     DirectX::SimpleMath::Vector3                    m_cameraPos;
+    DirectX::SimpleMath::Vector3                    m_clearColor;
+    DirectX::SimpleMath::Vector3                    m_gridColor;
 
     float                                           m_pitch;
     float                                           m_yaw;
     float                                           m_gridScale;
+    float                                           m_fov;
 
+    bool                                            m_showHud;
     bool                                            m_showGrid;
+    bool                                            m_wireframe;
+    bool                                            m_reloadModel;
+
+    WCHAR                                           m_szModelName[MAX_PATH];
+    WCHAR                                           m_szStatus[ 512 ];
 };
