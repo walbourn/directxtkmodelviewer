@@ -52,6 +52,8 @@ private:
 
     void CameraHome();
 
+    void CycleBackgroundColor();
+
     // Application state
     HWND                                            m_window;
     int                                             m_outputWidth;
@@ -90,6 +92,7 @@ private:
 
     DirectX::Keyboard::KeyboardStateTracker         m_keyboardTracker;
     DirectX::Mouse::ButtonStateTracker              m_mouseButtonTracker;
+    DirectX::GamePad::ButtonStateTracker            m_gamepadButtonTracker;
 
     DirectX::SimpleMath::Matrix                     m_world;
     DirectX::SimpleMath::Matrix                     m_view;

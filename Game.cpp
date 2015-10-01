@@ -69,7 +69,7 @@ void Game::Tick()
         Update(m_timer);
     });
 
-    Render();
+   Render();
 }
 
 // Updates the world
@@ -80,145 +80,198 @@ void Game::Update(DX::StepTimer const& timer)
 
     float elapsedTime = float(timer.GetElapsedSeconds());
 
-    auto kb = m_keyboard->GetState();
-
-    // Camera movement
-    Vector3 move = Vector3::Zero;
-
-    if (kb.Up)
-        move.y += m_distance;
-
-    if (kb.Down)
-        move.y -= m_distance;
-
-    if (kb.Right)
-        move.x += m_distance;
-
-    if (kb.Left)
-        move.x -= m_distance;
-
-    if (kb.PageUp)
-        move.z += m_distance;
-
-    if (kb.PageDown)
-        move.z -= m_distance;
-
-    m_cameraFocus += move * elapsedTime;
-
-    // Other keyboard controls
-    if (kb.Home)
+    auto gpad = m_gamepad->GetState(0);
+    if (gpad.IsConnected())
     {
-        CameraHome();
-    }
+        m_gamepadButtonTracker.Update(gpad);
 
-    if (kb.End)
-    {
-        m_modelRot = Quaternion::Identity;
-    }
+        // Translate camera
+        Vector3 move;
 
-    if (m_showGrid)
-    {
-        if (kb.OemPlus)
+        if (gpad.IsLeftStickPressed())
         {
-            m_gridScale += 2.f * elapsedTime;
-        }
-        else if (kb.OemMinus)
-        {
-            m_gridScale -= 2.f * elapsedTime;
-            if (m_gridScale < 1.f)
-                m_gridScale = 1.f;
-        }
-    }
-
-    m_keyboardTracker.Update(kb);
-
-    if (m_keyboardTracker.pressed.G)
-        m_showGrid = !m_showGrid;
-
-    if (m_keyboardTracker.pressed.W)
-        m_wireframe = !m_wireframe;
-
-    if (m_keyboardTracker.pressed.H)
-        m_showHud = !m_showHud;
-
-    if (m_keyboardTracker.pressed.B)
-    {
-        if (m_clearColor == Vector4(Colors::CornflowerBlue.v))
-        {
-            m_clearColor = Colors::Black.v;
-            m_gridColor = Colors::Yellow.v;
-            m_hudColor = Colors::Yellow.v;
-        }
-        else if (m_clearColor == Vector4(Colors::Black.v))
-        {   
-            m_clearColor = Colors::White.v;
-            m_gridColor = Colors::Black.v;
-            m_hudColor = Colors::Green.v;
+            move.z = (m_lhcoords) ? gpad.thumbSticks.leftY : -gpad.thumbSticks.leftY;
         }
         else
         {
-            m_clearColor = Colors::CornflowerBlue.v;
-            m_gridColor = Colors::White.v;
-            m_hudColor = Colors::White.v;
+            move.x = gpad.thumbSticks.leftX;
+            move.y = gpad.thumbSticks.leftY;
         }
-    }
+        
+        m_cameraFocus += move * m_distance * elapsedTime;
 
-    if (m_keyboardTracker.pressed.O)
-    {
-        PostMessage(m_window, WM_USER, 0, 0);
-    }
+        // Rotate camera
+        Vector2 orbit(gpad.thumbSticks.rightX, gpad.thumbSticks.rightY);
+        orbit *= elapsedTime;
 
-    // Mouse controls
-    auto mouse = m_mouse->GetState();
+        m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Right, (m_lhcoords) ? -orbit.y : orbit.y);
+        m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Up, orbit.x);
+        m_cameraRot.Normalize();
 
-    m_mouseButtonTracker.Update(mouse);
+        // Zoom camera
+        m_zoom += (gpad.triggers.right - gpad.triggers.left) * elapsedTime;
+        m_zoom = std::max(m_zoom, 0.1f);
 
-    if (mouse.positionMode == Mouse::MODE_RELATIVE)
-    {
-        // Translate camera
-        Vector3 delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
+        // Other controls
+        if (gpad.IsViewPressed())
+        {
+            PostMessage(m_window, WM_USER, 0, 0);
+        }
+        
+        if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
+        {
+            CycleBackgroundColor();
+        }
 
-        m_cameraFocus += delta * elapsedTime;
-    }
-    else if ( m_ballModel.IsDragging() )
-    {
-        m_ballModel.OnMove(mouse.x, mouse.y);
-        m_modelRot = m_ballModel.GetQuat();
-    }
-    else if ( m_ballCamera.IsDragging() )
-    {
-        m_ballCamera.OnMove(mouse.x, mouse.y);
-        m_cameraRot = m_ballCamera.GetQuat();
+        if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
+        {
+            m_wireframe = !m_wireframe;
+        }
+
+        if (m_gamepadButtonTracker.dpadLeft == GamePad::ButtonStateTracker::PRESSED)
+        {
+            m_showGrid = !m_showGrid;
+        }
+
+        if (m_gamepadButtonTracker.dpadRight == GamePad::ButtonStateTracker::PRESSED)
+        {
+            m_showHud = !m_showHud;
+        }
+
+        if (m_gamepadButtonTracker.y == GamePad::ButtonStateTracker::PRESSED)
+        {
+            CameraHome();
+            m_modelRot = Quaternion::Identity;
+        }
     }
     else
     {
-        m_zoom = 1.f + mouse.scrollWheelValue / float(120*10);
-        m_zoom = std::max(m_zoom, 0.1f);
-    }
+        m_gamepadButtonTracker.Reset();
 
-    if (!m_ballModel.IsDragging() && !m_ballCamera.IsDragging())
-    {
-        if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::PRESSED)
-            m_mouse->SetMode(Mouse::MODE_RELATIVE);
-        else if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::RELEASED)
-            m_mouse->SetMode(Mouse::MODE_ABSOLUTE);
-    }
+        auto kb = m_keyboard->GetState();
 
-    if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::PRESSED)
-    {
-        if (kb.LeftShift || kb.RightShift)
+        // Camera movement
+        Vector3 move = Vector3::Zero;
+
+        if (kb.Up)
+            move.y += m_distance;
+
+        if (kb.Down)
+            move.y -= m_distance;
+
+        if (kb.Right)
+            move.x += m_distance;
+
+        if (kb.Left)
+            move.x -= m_distance;
+
+        if (kb.PageUp)
+            move.z += m_distance;
+
+        if (kb.PageDown)
+            move.z -= m_distance;
+
+        m_cameraFocus += move * elapsedTime;
+
+        // Other keyboard controls
+        if (kb.Home)
         {
-            m_ballCamera.OnBegin(mouse.x, mouse.y);
+            CameraHome();
+        }
+
+        if (kb.End)
+        {
+            m_modelRot = Quaternion::Identity;
+        }
+
+        if (m_showGrid)
+        {
+            if (kb.OemPlus)
+            {
+                m_gridScale += 2.f * elapsedTime;
+            }
+            else if (kb.OemMinus)
+            {
+                m_gridScale -= 2.f * elapsedTime;
+                if (m_gridScale < 1.f)
+                    m_gridScale = 1.f;
+            }
+        }
+
+        m_keyboardTracker.Update(kb);
+
+        if (m_keyboardTracker.pressed.G)
+            m_showGrid = !m_showGrid;
+
+        if (m_keyboardTracker.pressed.W)
+            m_wireframe = !m_wireframe;
+
+        if (m_keyboardTracker.pressed.H)
+            m_showHud = !m_showHud;
+
+        if (m_keyboardTracker.pressed.B)
+            CycleBackgroundColor();
+
+        if (m_keyboardTracker.pressed.O)
+        {
+            PostMessage(m_window, WM_USER, 0, 0);
+        }
+
+        // Mouse controls
+        auto mouse = m_mouse->GetState();
+
+        m_mouseButtonTracker.Update(mouse);
+
+        if (mouse.positionMode == Mouse::MODE_RELATIVE)
+        {
+            // Translate camera
+            Vector3 delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
+
+            m_cameraFocus += delta * elapsedTime;
+        }
+        else if (m_ballModel.IsDragging())
+        {
+            // Rotate model
+            m_ballModel.OnMove(mouse.x, mouse.y);
+            m_modelRot = m_ballModel.GetQuat();
+        }
+        else if (m_ballCamera.IsDragging())
+        {
+            // Rotate camera
+            m_ballCamera.OnMove(mouse.x, mouse.y);
+            m_cameraRot = m_ballCamera.GetQuat();
         }
         else
         {
-            m_ballModel.OnBegin(mouse.x, mouse.y);
+            // Zoom with scroll wheel
+            m_zoom = 1.f + mouse.scrollWheelValue / float(120 * 10);
+            m_zoom = std::max(m_zoom, 0.1f);
         }
-    }
-    else if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::RELEASED)
-    {
-        m_ballCamera.OnEnd();
-        m_ballModel.OnEnd();
+
+        if (!m_ballModel.IsDragging() && !m_ballCamera.IsDragging())
+        {
+            if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::PRESSED)
+                m_mouse->SetMode(Mouse::MODE_RELATIVE);
+            else if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::RELEASED)
+                m_mouse->SetMode(Mouse::MODE_ABSOLUTE);
+
+            if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::PRESSED)
+            {
+                if (kb.LeftShift || kb.RightShift)
+                {
+                    m_ballModel.OnBegin(mouse.x, mouse.y);
+                }
+                else
+                {
+                    m_ballCamera.OnBegin(mouse.x, mouse.y);
+                }
+            }
+        }
+        else if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::RELEASED)
+        {
+            m_ballCamera.OnEnd();
+            m_ballModel.OnEnd();
+        }
     }
 
     // Update camera
@@ -333,6 +386,7 @@ void Game::OnActivated()
 {
     m_keyboardTracker.Reset();
     m_mouseButtonTracker.Reset();
+    m_gamepadButtonTracker.Reset();
 }
 
 void Game::OnDeactivated()
@@ -348,6 +402,7 @@ void Game::OnResuming()
     m_timer.ResetElapsedTime();
     m_keyboardTracker.Reset();
     m_mouseButtonTracker.Reset();
+    m_gamepadButtonTracker.Reset();
 }
 
 void Game::OnWindowSizeChanged(int width, int height)
@@ -786,6 +841,7 @@ void Game::CameraHome()
     {
         m_cameraFocus = Vector3::Zero;
         m_distance = 10.f;
+        m_gridScale = 1.f;
     }
     else
     {
@@ -817,8 +873,32 @@ void Game::CameraHome()
 	        sphere.Radius = 10.f;
         }
 
+        m_gridScale = sphere.Radius;
+
         m_distance = sphere.Radius * 2;
 
         m_cameraFocus = sphere.Center;
+    }
+}
+
+void Game::CycleBackgroundColor()
+{
+    if (m_clearColor == Vector4(Colors::CornflowerBlue.v))
+    {
+        m_clearColor = Colors::Black.v;
+        m_gridColor = Colors::Yellow.v;
+        m_hudColor = Colors::Yellow.v;
+    }
+    else if (m_clearColor == Vector4(Colors::Black.v))
+    {
+        m_clearColor = Colors::White.v;
+        m_gridColor = Colors::Black.v;
+        m_hudColor = Colors::Green.v;
+    }
+    else
+    {
+        m_clearColor = Colors::CornflowerBlue.v;
+        m_gridColor = Colors::White.v;
+        m_hudColor = Colors::White.v;
     }
 }
