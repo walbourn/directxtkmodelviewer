@@ -1,0 +1,21 @@
+<Contributor ComponentSource="c:\users\chuckw\desktop\d3d11 projects\directxtkmodelviewer\directxtkmodelviewer_xdk_2015.vcxproj">
+  <Configuration Name="Debug">
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Debug\appdata.bin">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\appdata.bin</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Debug\AppxManifest.xml">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\AppxManifest.xml</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Debug\resources.pri">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\resources.pri</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\comic.spritefont">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\comic.spritefont</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\consolas.spritefont">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\consolas.spritefont</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Debug\DirectXTKModelViewer_XDK_2015.exe">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\DirectXTKModelViewer_XDK_2015.exe</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Logo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\Logo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\SmallLogo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\SmallLogo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\SplashScreen.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\SplashScreen.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\StoreLogo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\StoreLogo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Logo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\Logo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\SmallLogo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\SmallLogo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\SplashScreen.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\SplashScreen.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\StoreLogo.png">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\StoreLogo.png</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\comic.spritefont">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\comic.spritefont</File>
+    <File Source="C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\consolas.spritefont">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\consolas.spritefont</File>
+    <File Source="C:\Program Files (x86)\Microsoft Durango XDK\sideload\era.xvd">C:\Users\ChuckW\Desktop\D3D11 Projects\DirectXTKModelViewer\Durango\Layout\Image\Loose\era.xvd</File>
+  </Configuration>
+</Contributor>

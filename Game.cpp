@@ -15,8 +15,13 @@ static const float ROTATION_GAIN = 0.004f;
 // Constructor.
 Game::Game() :
     m_window(0),
+#ifdef _XBOX_ONE
+    m_outputWidth(1920),
+    m_outputHeight(1080),
+#else
     m_outputWidth(800),
     m_outputHeight(600),
+#endif
     m_featureLevel(D3D_FEATURE_LEVEL_10_0),
     m_gridScale(10.f),
     m_fov(XM_PI / 4.f),
@@ -40,11 +45,17 @@ Game::Game() :
 }
 
 // Initialize the Direct3D resources required to run.
+#ifdef _XBOX_ONE
+void Game::Initialize(IUnknown* window)
+{
+    m_window = window;
+#else
 void Game::Initialize(HWND window, int width, int height)
 {
     m_window = window;
-    m_outputWidth = std::max( width, 1 );
-    m_outputHeight = std::max( height, 1 );
+    m_outputWidth = std::max(width, 1);
+    m_outputHeight = std::max(height, 1);
+#endif
 
     m_ballCamera.SetWindow(m_outputWidth, m_outputHeight);
     m_ballModel.SetWindow(m_outputWidth, m_outputHeight);
@@ -58,7 +69,9 @@ void Game::Initialize(HWND window, int width, int height)
     m_keyboard.reset(new Keyboard);
 
     m_mouse.reset(new Mouse);
+#ifndef _XBOX_ONE
     m_mouse->SetWindow(window);
+#endif
 }
 
 // Executes basic game loop.
@@ -115,7 +128,11 @@ void Game::Update(DX::StepTimer const& timer)
         // Other controls
         if (gpad.IsViewPressed())
         {
+#ifdef _XBOX_ONE
+            // TODO - ?
+#else
             PostMessage(m_window, WM_USER, 0, 0);
+#endif
         }
         
         if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
@@ -214,7 +231,11 @@ void Game::Update(DX::StepTimer const& timer)
 
         if (m_keyboardTracker.pressed.O)
         {
+#ifdef _XBOX_ONE
+            // TODO -
+#else
             PostMessage(m_window, WM_USER, 0, 0);
+#endif
         }
 
         // Mouse controls
@@ -352,7 +373,7 @@ void Game::Clear()
 {
     // Clear the views
     XMVECTORF32 clearColor;
-    clearColor.v = m_clearColor;
+    clearColor.v = XMColorSRGBToRGB(m_clearColor);
     m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
     m_d3dContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -395,10 +416,16 @@ void Game::OnDeactivated()
 
 void Game::OnSuspending()
 {
+#ifdef _XBOX_ONE
+    m_d3dContext->Suspend(0);
+#endif
 }
 
 void Game::OnResuming()
 {
+#ifdef _XBOX_ONE
+    m_d3dContext->Resume();
+#endif  
     m_timer.ResetElapsedTime();
     m_keyboardTracker.Reset();
     m_mouseButtonTracker.Reset();
@@ -435,7 +462,7 @@ void Game::GetDefaultSize(int& width, int& height) const
 // These are the resources that depend on the device.
 void Game::CreateDevice()
 {
-    UINT creationFlags = 0;
+    UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #ifdef _DEBUG
     creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -450,6 +477,22 @@ void Game::CreateDevice()
     };
 
     // Create the DX11 API device object, and get a corresponding context.
+#ifdef _XBOX_ONE
+    ComPtr<ID3D11Device> device;
+    ComPtr<ID3D11DeviceContext> context;
+    HRESULT hr = D3D11CreateDevice(
+        nullptr,                                // specify null to use the default adapter
+        D3D_DRIVER_TYPE_HARDWARE,
+        nullptr,                                // leave as nullptr unless software device
+        creationFlags,                          // optionally set debug and Direct2D compatibility flags
+        featureLevels,                          // list of feature levels this app can support
+        _countof(featureLevels),                // number of entries in above list
+        D3D11_SDK_VERSION,                      // always set this to D3D11_SDK_VERSION
+        device.ReleaseAndGetAddressOf(),        // returns the Direct3D device created
+        &m_featureLevel,                        // returns feature level of device created
+        context.ReleaseAndGetAddressOf()        // returns the device immediate context
+        );
+#else
     HRESULT hr = D3D11CreateDevice(
         nullptr,                                // specify null to use the default adapter
         D3D_DRIVER_TYPE_HARDWARE,
@@ -471,10 +514,11 @@ void Game::CreateDevice()
                                 D3D11_SDK_VERSION, m_d3dDevice.ReleaseAndGetAddressOf(),
                                 &m_featureLevel, m_d3dContext.ReleaseAndGetAddressOf());
     }
+#endif
 
     DX::ThrowIfFailed(hr);
 
-#ifndef NDEBUG
+#if !defined(_XBOX_ONE) && !defined(NDEBUG)
     ComPtr<ID3D11Debug> d3dDebug;
     hr = m_d3dDevice.As(&d3dDebug);
     if (SUCCEEDED(hr))
@@ -500,10 +544,20 @@ void Game::CreateDevice()
     }
 #endif
 
+#ifdef _XBOX_ONE
+    // Get the DirectX11.X device by QI off the DirectX11 one.
+    hr = device.As(&m_d3dDevice);
+    DX::ThrowIfFailed(hr);
+
+    // And get the corresponding device context in the same way.
+    hr = context.As(&m_d3dContext);
+    DX::ThrowIfFailed(hr);
+#else
     // DirectX 11.1 if present
     hr = m_d3dDevice.As(&m_d3dDevice1);
     if (SUCCEEDED(hr))
         (void)m_d3dContext.As(&m_d3dContext1);
+#endif
 
     auto ctx = m_d3dContext.Get();
 
@@ -544,8 +598,13 @@ void Game::CreateResources()
 
     UINT backBufferWidth = static_cast<UINT>(m_outputWidth);
     UINT backBufferHeight = static_cast<UINT>(m_outputHeight);
+#ifdef _XBOX_ONE
+    DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+    DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT;
+#else
     DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
     DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+#endif
 
     // If the swap chain already exists, resize it, otherwise create one.
     if (m_swapChain)
@@ -576,6 +635,28 @@ void Game::CreateResources()
         ComPtr<IDXGIAdapter> dxgiAdapter;
         DX::ThrowIfFailed(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
 
+#ifdef _XBOX_ONE
+        ComPtr<IDXGIFactory2> dxgiFactory;
+        DX::ThrowIfFailed(dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), &dxgiFactory));
+
+        // Create a descriptor for the swap chain.
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
+        swapChainDesc.Width = backBufferWidth;
+        swapChainDesc.Height = backBufferHeight;
+        swapChainDesc.Format = backBufferFormat;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.BufferCount = 2;
+        swapChainDesc.SampleDesc.Count = 1;
+        swapChainDesc.SampleDesc.Quality = 0;
+        swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_SEQUENTIAL;
+        swapChainDesc.Flags = DXGIX_SWAP_CHAIN_MATCH_XBOX360_AND_PC;
+
+        // Create a SwapChain from a CoreWindow.
+        DX::ThrowIfFailed(dxgiFactory->CreateSwapChainForCoreWindow(m_d3dDevice.Get(),
+            m_window, &swapChainDesc,
+            nullptr, m_swapChain.GetAddressOf()));
+#else
         // And obtain the factory object that created it.
         ComPtr<IDXGIFactory1> dxgiFactory;
         DX::ThrowIfFailed(dxgiAdapter->GetParent( IID_PPV_ARGS( &dxgiFactory ) ) );
@@ -625,6 +706,7 @@ void Game::CreateResources()
 
         // This template does not support 'full-screen' mode and prevents the ALT+ENTER shortcut from working
         dxgiFactory->MakeWindowAssociation(m_window, DXGI_MWA_NO_ALT_ENTER);
+#endif
     }
 
     // Obtain the backbuffer for this window which will be the final 3D rendertarget.
@@ -671,12 +753,15 @@ void Game::OnDeviceLost()
     m_depthStencil.Reset();
     m_depthStencilView.Reset();
     m_renderTargetView.Reset();
-    m_swapChain1.Reset();
     m_swapChain.Reset();
-    m_d3dContext1.Reset();
     m_d3dContext.Reset();
-    m_d3dDevice1.Reset();
     m_d3dDevice.Reset();
+
+#ifndef _XBOX_ONE
+    m_swapChain1.Reset();
+    m_d3dContext1.Reset();
+    m_d3dDevice1.Reset();
+#endif
 
     CreateDevice();
 

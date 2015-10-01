@@ -17,7 +17,11 @@ public:
     Game();
 
     // Initialization and management
+#ifdef _XBOX_ONE
+    void Initialize(IUnknown* window);
+#else
     void Initialize(HWND window, int width, int height);
+#endif
 
     // Basic game loop
     void Tick();
@@ -55,20 +59,33 @@ private:
     void CycleBackgroundColor();
 
     // Application state
+#ifdef _XBOX_ONE
+    IUnknown*                                       m_window;
+#else
     HWND                                            m_window;
+#endif
     int                                             m_outputWidth;
     int                                             m_outputHeight;
 
     // Direct3D Objects
     D3D_FEATURE_LEVEL                               m_featureLevel;
+#ifdef _XBOX_ONE
+    Microsoft::WRL::ComPtr<ID3D11DeviceX>           m_d3dDevice;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContextX>    m_d3dContext;
+#else
     Microsoft::WRL::ComPtr<ID3D11Device>            m_d3dDevice;
     Microsoft::WRL::ComPtr<ID3D11Device1>           m_d3dDevice1;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext>     m_d3dContext;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    m_d3dContext1;
+#endif
 
     // Rendering resources
+#ifdef _XBOX_ONE
+    Microsoft::WRL::ComPtr<IDXGISwapChain1>         m_swapChain;
+#else
     Microsoft::WRL::ComPtr<IDXGISwapChain>          m_swapChain;
     Microsoft::WRL::ComPtr<IDXGISwapChain1>         m_swapChain1;
+#endif
     Microsoft::WRL::ComPtr<ID3D11RenderTargetView>  m_renderTargetView;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView>  m_depthStencilView;
     Microsoft::WRL::ComPtr<ID3D11Texture2D>         m_depthStencil;

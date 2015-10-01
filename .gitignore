@@ -18,6 +18,7 @@
 ARM
 "Generated Files"
 Bin
+DirectXTK/Src/Shaders/Compiled/XboxOne*.inc
 ipch
 Debug
 Profile
