@@ -373,7 +373,11 @@ void Game::Clear()
 {
     // Clear the views
     XMVECTORF32 clearColor;
+#ifdef _XBOX_ONE
     clearColor.v = XMColorSRGBToRGB(m_clearColor);
+#else
+    clearColor.v = m_clearColor;
+#endif
     m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
     m_d3dContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
