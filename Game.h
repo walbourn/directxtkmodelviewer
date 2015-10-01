@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "pch.h"
 #include "StepTimer.h"
+#include "ArcBall.h"
+
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop
@@ -94,21 +95,31 @@ private:
     DirectX::SimpleMath::Matrix                     m_view;
     DirectX::SimpleMath::Matrix                     m_proj;
 
-    DirectX::SimpleMath::Vector3                    m_cameraPos;
+    DirectX::SimpleMath::Vector3                    m_cameraFocus;
+    DirectX::SimpleMath::Quaternion                 m_cameraRot;
     DirectX::SimpleMath::Vector4                    m_clearColor;
     DirectX::SimpleMath::Vector4                    m_gridColor;
     DirectX::SimpleMath::Vector4                    m_hudColor;
 
-    float                                           m_pitch;
-    float                                           m_yaw;
+    DirectX::SimpleMath::Quaternion                 m_modelRot;
+
     float                                           m_gridScale;
     float                                           m_fov;
+    float                                           m_zoom;
+    float                                           m_distance;
+    float                                           m_farPlane;
+    size_t                                          m_gridDivs;
 
     bool                                            m_showHud;
     bool                                            m_showGrid;
     bool                                            m_wireframe;
     bool                                            m_reloadModel;
+    bool                                            m_lhcoords;
 
     WCHAR                                           m_szModelName[MAX_PATH];
     WCHAR                                           m_szStatus[ 512 ];
+    WCHAR                                           m_szError[ 512 ];
+
+    ArcBall                                         m_ballCamera;
+    ArcBall                                         m_ballModel;
 };

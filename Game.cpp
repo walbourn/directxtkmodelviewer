@@ -10,8 +10,6 @@ using namespace DirectX::SimpleMath;
 
 using Microsoft::WRL::ComPtr;
 
-static const XMVECTORF32 START_POSITION = { 10.f, 10.f, 10.f, 0.f };
-static const float MOVEMENT_GAIN = 1.f;
 static const float ROTATION_GAIN = 0.004f;
 
 // Constructor.
@@ -20,23 +18,25 @@ Game::Game() :
     m_outputWidth(800),
     m_outputHeight(600),
     m_featureLevel(D3D_FEATURE_LEVEL_10_0),
-    m_pitch(0.f),
-    m_yaw(0.f),
     m_gridScale(10.f),
     m_fov(XM_PI / 4.f),
+    m_zoom(1.f),
+    m_distance(10.f),
+    m_farPlane(10000.f),
+    m_gridDivs(20),
     m_showHud(true),
     m_showGrid(true),
     m_wireframe(false),
-    m_reloadModel(false)
+    m_reloadModel(false),
+    m_lhcoords(true)
 {
-    m_cameraPos = START_POSITION.v;
-
-    m_clearColor = Colors::CornflowerBlue.v;
-    m_gridColor = Colors::White.v;
-    m_hudColor = Colors::White.v;
+    m_clearColor = Colors::Black.v;
+    m_gridColor = Colors::Yellow.v;
+    m_hudColor = Colors::Yellow.v;
 
     *m_szModelName = 0;
     *m_szStatus = 0;
+    *m_szError = 0;
 }
 
 // Initialize the Direct3D resources required to run.
@@ -45,6 +45,9 @@ void Game::Initialize(HWND window, int width, int height)
     m_window = window;
     m_outputWidth = std::max( width, 1 );
     m_outputHeight = std::max( height, 1 );
+
+    m_ballCamera.SetWindow(m_outputWidth, m_outputHeight);
+    m_ballModel.SetWindow(m_outputWidth, m_outputHeight);
 
     CreateDevice();
 
@@ -82,34 +85,35 @@ void Game::Update(DX::StepTimer const& timer)
     // Camera movement
     Vector3 move = Vector3::Zero;
 
-    if (kb.Up || kb.W)
-        move.y += 1.f;
+    if (kb.Up)
+        move.y += m_distance;
 
-    if (kb.Down || kb.S)
-        move.y -= 1.f;
+    if (kb.Down)
+        move.y -= m_distance;
 
-    if (kb.Left || kb.A)
-        move.x += 1.f;
+    if (kb.Right)
+        move.x += m_distance;
 
-    if (kb.Right || kb.D)
-        move.x -= 1.f;
+    if (kb.Left)
+        move.x -= m_distance;
 
-    if (kb.PageUp || kb.Space)
-        move.z += 1.f;
+    if (kb.PageUp)
+        move.z += m_distance;
 
-    if (kb.PageDown || kb.X)
-        move.z -= 1.f;
+    if (kb.PageDown)
+        move.z -= m_distance;
 
-    Quaternion q = Quaternion::CreateFromYawPitchRoll(m_yaw, m_pitch, 0.f);
-
-    move = Vector3::Transform(move, q);
-
-    m_cameraPos += move * elapsedTime;
+    m_cameraFocus += move * elapsedTime;
 
     // Other keyboard controls
     if (kb.Home)
     {
         CameraHome();
+    }
+
+    if (kb.End)
+    {
+        m_modelRot = Quaternion::Identity;
     }
 
     if (m_showGrid)
@@ -131,7 +135,7 @@ void Game::Update(DX::StepTimer const& timer)
     if (m_keyboardTracker.pressed.G)
         m_showGrid = !m_showGrid;
 
-    if (m_keyboardTracker.pressed.V)
+    if (m_keyboardTracker.pressed.W)
         m_wireframe = !m_wireframe;
 
     if (m_keyboardTracker.pressed.H)
@@ -146,7 +150,7 @@ void Game::Update(DX::StepTimer const& timer)
             m_hudColor = Colors::Yellow.v;
         }
         else if (m_clearColor == Vector4(Colors::Black.v))
-        {
+        {   
             m_clearColor = Colors::White.v;
             m_gridColor = Colors::Black.v;
             m_hudColor = Colors::Green.v;
@@ -171,61 +175,77 @@ void Game::Update(DX::StepTimer const& timer)
 
     if (mouse.positionMode == Mouse::MODE_RELATIVE)
     {
-        if (kb.LeftControl || kb.RightControl)
-        {
-            Vector3 delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * MOVEMENT_GAIN;
+        // Translate camera
+        Vector3 delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
 
-            q = Quaternion::CreateFromYawPitchRoll(m_yaw, m_pitch, 0.f);
-
-            move = Vector3::Transform(delta, q);
-
-            m_cameraPos += move * elapsedTime;
-        }
-        else
-        {
-            Vector3 delta = Vector3(float(mouse.x), float(mouse.y), 0.f) * ROTATION_GAIN;
-
-            m_pitch -= delta.y;
-            m_yaw -= delta.x;
-
-            // limit pitch to straight up or straight down
-            // with a little fudge-factor to avoid gimbal lock
-            float limit = XM_PI / 2.0f - 0.01f;
-            m_pitch = std::max(-limit, m_pitch);
-            m_pitch = std::min(+limit, m_pitch);
-
-            // keep longitude in sane range by wrapping
-            if (m_yaw > XM_PI)
-            {
-                m_yaw -= XM_PI * 2.0f;
-            }
-            else if (m_yaw < -XM_PI)
-            {
-                m_yaw += XM_PI * 2.0f;
-            }
-        }
+        m_cameraFocus += delta * elapsedTime;
+    }
+    else if ( m_ballModel.IsDragging() )
+    {
+        m_ballModel.OnMove(mouse.x, mouse.y);
+        m_modelRot = m_ballModel.GetQuat();
+    }
+    else if ( m_ballCamera.IsDragging() )
+    {
+        m_ballCamera.OnMove(mouse.x, mouse.y);
+        m_cameraRot = m_ballCamera.GetQuat();
     }
     else
     {
-        // TODO - mouse.scrollWheelValue
+        m_zoom = 1.f + mouse.scrollWheelValue / float(120*10);
+        m_zoom = std::max(m_zoom, 0.1f);
+    }
+
+    if (!m_ballModel.IsDragging() && !m_ballCamera.IsDragging())
+    {
+        if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::PRESSED)
+            m_mouse->SetMode(Mouse::MODE_RELATIVE);
+        else if (m_mouseButtonTracker.rightButton == Mouse::ButtonStateTracker::RELEASED)
+            m_mouse->SetMode(Mouse::MODE_ABSOLUTE);
     }
 
     if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::PRESSED)
-        m_mouse->SetMode(Mouse::MODE_RELATIVE);
+    {
+        if (kb.LeftShift || kb.RightShift)
+        {
+            m_ballCamera.OnBegin(mouse.x, mouse.y);
+        }
+        else
+        {
+            m_ballModel.OnBegin(mouse.x, mouse.y);
+        }
+    }
     else if (m_mouseButtonTracker.leftButton == Mouse::ButtonStateTracker::RELEASED)
-        m_mouse->SetMode(Mouse::MODE_ABSOLUTE);
+    {
+        m_ballCamera.OnEnd();
+        m_ballModel.OnEnd();
+    }
 
     // Update camera
+    Vector3 position = m_cameraFocus;
+    
+    if (m_lhcoords)
     {
-        float y = sinf(m_pitch);
-        float r = cosf(m_pitch);
-        float z = r*cosf(m_yaw);
-        float x = r*sinf(m_yaw);
-
-        XMVECTOR lookAt = m_cameraPos + Vector3(x, y, z);
-
-        m_view = XMMatrixLookAtRH(m_cameraPos, lookAt, Vector3::Up);
+        position += (m_distance * m_zoom) * Vector3::Forward;
     }
+    else
+    {
+        position += (m_distance * m_zoom) * Vector3::Backward;
+    }
+        
+    Matrix view;
+    if (m_lhcoords)
+    {
+        view = XMMatrixLookAtLH(position, m_cameraFocus, Vector3::Up);
+    }
+    else
+    {
+        view = Matrix::CreateLookAt(position, m_cameraFocus, Vector3::Up);
+    }
+
+    m_view = Matrix::CreateFromQuaternion(m_cameraRot) * view;
+
+    m_world = Matrix::CreateFromQuaternion(m_modelRot);
 }
 
 // Draws the scene
@@ -246,7 +266,14 @@ void Game::Render()
     {
         m_spriteBatch->Begin();
 
-        m_fontComic->DrawString(m_spriteBatch.get(), L"No model is loaded\n", XMFLOAT2(100, 100), Colors::Red);
+        if (*m_szError)
+        {
+            m_fontComic->DrawString(m_spriteBatch.get(), m_szError, XMFLOAT2(100, 100), Colors::Red);
+        }
+        else
+        {
+            m_fontComic->DrawString(m_spriteBatch.get(), L"No model is loaded\n", XMFLOAT2(100, 100), Colors::Red);
+        }
 
         m_spriteBatch->End();
     }
@@ -327,6 +354,9 @@ void Game::OnWindowSizeChanged(int width, int height)
 {
     m_outputWidth = std::max(width, 1);
     m_outputHeight = std::max(height, 1);
+
+    m_ballCamera.SetWindow(m_outputWidth, m_outputHeight);
+    m_ballModel.SetWindow(m_outputWidth, m_outputHeight);
 
     CreateResources();
 }
@@ -559,12 +589,15 @@ void Game::CreateResources()
     CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
     DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(depthStencil.Get(), &depthStencilViewDesc, m_depthStencilView.ReleaseAndGetAddressOf()));
 
-    m_pitch = m_yaw = 0;
-    m_view = Matrix::CreateLookAt(m_cameraPos, Vector3::Zero, Vector3::UnitY);
-    m_lineEffect->SetView(m_view);
+    if (m_lhcoords)
+    {
+        m_proj = XMMatrixPerspectiveFovLH( m_fov, float(backBufferWidth) / float(backBufferHeight), 0.1f, m_farPlane);
+    }
+    else
+    {
+        m_proj = Matrix::CreatePerspectiveFieldOfView(m_fov, float(backBufferWidth) / float(backBufferHeight), 0.1f, m_farPlane);
+    }
 
-    // TODO - Tweaks for depth?
-    m_proj = Matrix::CreatePerspectiveFieldOfView(m_fov, float(backBufferWidth) / float(backBufferHeight), 0.1f, 10000.f);
     m_lineEffect->SetProjection(m_proj);
 }
 
@@ -599,7 +632,9 @@ void Game::LoadModel()
 {
     m_model.reset();
     *m_szStatus = 0;
+    *m_szError = 0;
     m_reloadModel = false;
+    m_modelRot = Quaternion::Identity;
 
     if (!*m_szModelName)
         return;
@@ -607,13 +642,14 @@ void Game::LoadModel()
     WCHAR drive[ _MAX_DRIVE ];
     WCHAR path[ MAX_PATH ];
     WCHAR ext[ _MAX_EXT ];
-    _wsplitpath_s( m_szModelName, drive, _MAX_DRIVE, path, MAX_PATH, nullptr, 0, ext, _MAX_EXT );
+    WCHAR fname[ _MAX_FNAME ];
+    _wsplitpath_s( m_szModelName, drive, _MAX_DRIVE, path, MAX_PATH, fname, _MAX_FNAME, ext, _MAX_EXT );
                
     EffectFactory fx(m_d3dDevice.Get());
 
     if (*drive || *path)
     {
-        WCHAR dir[MAX_PATH];
+        WCHAR dir[MAX_PATH] = { 0 };
         _wmakepath_s(dir, drive, path, nullptr, nullptr);
         fx.SetDirectory(dir);
     }
@@ -622,24 +658,32 @@ void Game::LoadModel()
     {
         if (_wcsicmp(ext, L".sdkmesh") == 0)
         {
-            // TODO - rh vs. lh?
-            m_model = Model::CreateFromSDKMESH( m_d3dDevice.Get(), m_szModelName, fx );
+            m_model = Model::CreateFromSDKMESH(m_d3dDevice.Get(), m_szModelName, fx, m_lhcoords);
         }
         else if (_wcsicmp(ext, L".cmo") == 0)
         {
-            // TODO - rh vs. lh?
-            m_model = Model::CreateFromCMO( m_d3dDevice.Get(), m_szModelName, fx );
+            m_model = Model::CreateFromCMO(m_d3dDevice.Get(), m_szModelName, fx, !m_lhcoords);
         }
         else if (_wcsicmp(ext, L".vbo") == 0)
         {
-            m_model = Model::CreateFromVBO( m_d3dDevice.Get(), m_szModelName );
+            m_model = Model::CreateFromVBO(m_d3dDevice.Get(), m_szModelName, nullptr, m_lhcoords);
         }
         else
         {
-            // TODO: ERROR message
+            swprintf_s(m_szError, L"Unknown file type %ls", ext);
             m_model.reset();
+            *m_szStatus = 0;
         }
+    }
+    catch(...)
+    {
+        swprintf_s(m_szError, L"Error loading model %ls%ls\n", fname, ext);
+        m_model.reset();
+        *m_szStatus = 0;
+    }
 
+    if (m_model)
+    {
         size_t nmeshes = 0;
         size_t nverts = 0;
         size_t nfaces = 0;
@@ -679,11 +723,6 @@ void Game::LoadModel()
             swprintf_s(m_szStatus, L"     Verts: %6Iu   Faces: %6Iu   Subsets: %6Iu", nverts, nfaces, nsubsets);
         }
     }
-    catch(...)
-    {
-        // TODO: ERROR message
-        m_model.reset();
-    }
 
     CameraHome();
 }
@@ -692,10 +731,9 @@ void Game::DrawGrid()
 {
     auto ctx = m_d3dContext.Get();
     ctx->OMSetBlendState( m_states->Opaque(), nullptr, 0xFFFFFFFF );
-    ctx->OMSetDepthStencilState( m_states->DepthNone(), 0 );
+    ctx->OMSetDepthStencilState( m_states->DepthDefault(), 0 );
     ctx->RSSetState( m_states->CullCounterClockwise() );
 
-    m_lineEffect->SetWorld(m_world);
     m_lineEffect->SetView(m_view);
 
     m_lineEffect->Apply(ctx);
@@ -708,14 +746,11 @@ void Game::DrawGrid()
     Vector3 yaxis(0.f, 0.f, m_gridScale);
     Vector3 origin = Vector3::Zero;
 
-    // TODO - tweaks?
-    size_t divisions = 20;
-
     XMVECTOR color = m_gridColor;
 
-    for( size_t i = 0; i <= divisions; ++i )
+    for( size_t i = 0; i <= m_gridDivs; ++i )
     {
-        float fPercent = float(i) / float(divisions);
+        float fPercent = float(i) / float(m_gridDivs);
         fPercent = ( fPercent * 2.0f ) - 1.0f;
 
         Vector3 scale = xaxis * fPercent + origin;
@@ -725,9 +760,9 @@ void Game::DrawGrid()
         m_lineBatch->DrawLine( v1, v2 );
     }
 
-    for( size_t i = 0; i <= divisions; i++ )
+    for( size_t i = 0; i <= m_gridDivs; i++ )
     {
-        float fPercent = float(i) / float(divisions);
+        float fPercent = float(i) / float(m_gridDivs);
         fPercent = ( fPercent * 2.0f ) - 1.0f;
 
         Vector3 scale = yaxis * fPercent + origin;
@@ -742,11 +777,15 @@ void Game::DrawGrid()
 
 void Game::CameraHome()
 {
-    m_pitch = m_yaw = 0.f;
+    m_mouse->ResetScrollWheelValue();
+    m_zoom = 1.f;
+    m_cameraRot = Quaternion::Identity;
+    m_ballCamera.Reset();
 
     if (!m_model)
     {
-        m_cameraPos = START_POSITION.v;
+        m_cameraFocus = Vector3::Zero;
+        m_distance = 10.f;
     }
     else
     {
@@ -778,10 +817,8 @@ void Game::CameraHome()
 	        sphere.Radius = 10.f;
         }
 
-        float distance = sphere.Radius / sinf( m_fov / 2.f );
+        m_distance = sphere.Radius * 2;
 
-        Vector3 at = sphere.Center;
-
-        m_cameraPos = at + Vector3::Forward * distance;
+        m_cameraFocus = sphere.Center;
     }
 }
