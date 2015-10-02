@@ -30,11 +30,13 @@ Game::Game() :
     m_farPlane(10000.f),
     m_gridDivs(20),
     m_showHud(true),
-    m_showGrid(true),
+    m_showGrid(false),
     m_wireframe(false),
     m_reloadModel(false),
-    m_lhcoords(true)
-{
+    m_lhcoords(true),
+    m_selectFile(0),
+    m_firstFile(0)
+    {
     m_clearColor = Colors::Black.v;
     m_gridColor = Colors::Yellow.v;
     m_hudColor = Colors::Yellow.v;
@@ -98,69 +100,100 @@ void Game::Update(DX::StepTimer const& timer)
     {
         m_gamepadButtonTracker.Update(gpad);
 
-        // Translate camera
-        Vector3 move;
-
-        if (gpad.IsLeftStickPressed())
+        if (!m_fileNames.empty())
         {
-            move.z = (m_lhcoords) ? gpad.thumbSticks.leftY : -gpad.thumbSticks.leftY;
+            if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
+            {
+                --m_selectFile;
+                if (m_selectFile < 0)
+                    m_selectFile = int(m_fileNames.size()) - 1;
+            }
+            else if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
+            {
+                ++m_selectFile;
+                if (m_selectFile >= m_fileNames.size())
+                    m_selectFile = 0;
+            }
+            else if (gpad.IsAPressed())
+            {
+                swprintf_s(m_szModelName, L"D:\\%ls", m_fileNames[m_selectFile].c_str());
+                m_selectFile = m_firstFile = 0;
+                m_fileNames.clear();
+                LoadModel();
+            }
+            else if (gpad.IsBPressed())
+            {
+                m_selectFile = m_firstFile = 0;
+                m_fileNames.clear();
+            }
         }
         else
         {
-            move.x = gpad.thumbSticks.leftX;
-            move.y = gpad.thumbSticks.leftY;
-        }
-        
-        m_cameraFocus += move * m_distance * elapsedTime;
+            // Translate camera
+            Vector3 move;
 
-        // Rotate camera
-        Vector2 orbit(gpad.thumbSticks.rightX, gpad.thumbSticks.rightY);
-        orbit *= elapsedTime;
+            if (gpad.IsLeftStickPressed())
+            {
+                move.z = (m_lhcoords) ? gpad.thumbSticks.leftY : -gpad.thumbSticks.leftY;
+            }
+            else
+            {
+                move.x = gpad.thumbSticks.leftX;
+                move.y = gpad.thumbSticks.leftY;
+            }
 
-        m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Right, (m_lhcoords) ? -orbit.y : orbit.y);
-        m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Up, orbit.x);
-        m_cameraRot.Normalize();
+            m_cameraFocus += move * m_distance * elapsedTime;
 
-        // Zoom camera
-        m_zoom += (gpad.triggers.right - gpad.triggers.left) * elapsedTime;
-        m_zoom = std::max(m_zoom, 0.1f);
+            // Rotate camera
+            Vector2 orbit(gpad.thumbSticks.rightX, gpad.thumbSticks.rightY);
+            orbit *= elapsedTime;
 
-        // Other controls
-        if (gpad.IsViewPressed())
-        {
+            m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Right, (m_lhcoords) ? -orbit.y : orbit.y);
+            m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Up, orbit.x);
+            m_cameraRot.Normalize();
+
+            // Zoom camera
+            m_zoom += (gpad.triggers.right - gpad.triggers.left) * elapsedTime;
+            m_zoom = std::max(m_zoom, 0.1f);
+
+            // Other controls
+            if (gpad.IsViewPressed())
+            {
 #ifdef _XBOX_ONE
-            // TODO - ?
+                EnumerateModelFiles();
 #else
-            PostMessage(m_window, WM_USER, 0, 0);
+                PostMessage(m_window, WM_USER, 0, 0);
 #endif
-        }
-        
-        if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
-        {
-            CycleBackgroundColor();
-        }
+            }
 
-        if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
-        {
-            m_wireframe = !m_wireframe;
-        }
+            if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
+            {
+                CycleBackgroundColor();
+            }
 
-        if (m_gamepadButtonTracker.dpadLeft == GamePad::ButtonStateTracker::PRESSED)
-        {
-            m_showGrid = !m_showGrid;
-        }
+            if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_wireframe = !m_wireframe;
+            }
 
-        if (m_gamepadButtonTracker.dpadRight == GamePad::ButtonStateTracker::PRESSED)
-        {
-            m_showHud = !m_showHud;
-        }
+            if (m_gamepadButtonTracker.dpadLeft == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_showGrid = !m_showGrid;
+            }
 
-        if (m_gamepadButtonTracker.y == GamePad::ButtonStateTracker::PRESSED)
-        {
-            CameraHome();
-            m_modelRot = Quaternion::Identity;
+            if (m_gamepadButtonTracker.dpadRight == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_showHud = !m_showHud;
+            }
+
+            if (m_gamepadButtonTracker.y == GamePad::ButtonStateTracker::PRESSED)
+            {
+                CameraHome();
+                m_modelRot = Quaternion::Identity;
+            }
         }
     }
+#ifndef _XBOX_ONE
     else
     {
         m_gamepadButtonTracker.Reset();
@@ -231,11 +264,7 @@ void Game::Update(DX::StepTimer const& timer)
 
         if (m_keyboardTracker.pressed.O)
         {
-#ifdef _XBOX_ONE
-            // TODO -
-#else
             PostMessage(m_window, WM_USER, 0, 0);
-#endif
         }
 
         // Mouse controls
@@ -294,6 +323,7 @@ void Game::Update(DX::StepTimer const& timer)
             m_ballModel.OnEnd();
         }
     }
+#endif
 
     // Update camera
     Vector3 position = m_cameraFocus;
@@ -359,10 +389,36 @@ void Game::Render()
         {
             m_spriteBatch->Begin();
 
+#ifdef _XBOX_ONE
+            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 50), m_hudColor);
+#else
             m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_hudColor);
+#endif
 
             m_spriteBatch->End();
         }
+    }
+
+    if (!m_fileNames.empty())
+    {
+        m_spriteBatch->Begin();
+
+        float spacing = m_fontComic->GetLineSpacing();
+
+        if (m_selectFile < m_firstFile)
+            m_firstFile = m_selectFile;
+
+        if (m_selectFile > (m_firstFile + 18))
+            m_firstFile = m_selectFile;
+
+        float y = 200.f;
+        for (int j = m_firstFile; j < m_fileNames.size(); ++j)
+        {
+            m_fontComic->DrawString(m_spriteBatch.get(), m_fileNames[j].c_str(), XMFLOAT2(50, y), (m_selectFile == j) ? Colors::Yellow : Colors::Gray );
+            y += spacing;
+        }
+
+        m_spriteBatch->End();
     }
 
     Present();
@@ -991,3 +1047,45 @@ void Game::CycleBackgroundColor()
         m_hudColor = Colors::White.v;
     }
 }
+
+#ifdef _XBOX_ONE
+void Game::EnumerateModelFiles()
+{
+    m_selectFile = m_firstFile = 0;
+    m_fileNames.clear();
+
+    WIN32_FIND_DATA ffdata = { 0 };
+
+    static const WCHAR* exts[] = { L"D:\\*.sdkmesh", L"D:\\*.cmo", L"D:\\*.vbo" };
+    
+    for (size_t j = 0; j < _countof(exts); ++j)
+    {
+        HANDLE hFind = FindFirstFileEx( exts[j], FindExInfoStandard, &ffdata, FindExSearchNameMatch, nullptr, 0);
+        if (hFind == INVALID_HANDLE_VALUE)
+        {
+            continue;
+        }
+
+        if ( !(ffdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
+        {
+            OutputDebugStringW(ffdata.cFileName);
+            std::wstring fname = ffdata.cFileName;
+
+            m_fileNames.emplace_back(fname);
+        }
+
+        while (FindNextFile(hFind, &ffdata))
+        {
+            if (!(ffdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                OutputDebugStringW(ffdata.cFileName);
+                std::wstring fname = ffdata.cFileName;
+
+                m_fileNames.emplace_back(fname);
+            }
+        }
+
+        FindClose(hFind);
+    }
+}
+#endif

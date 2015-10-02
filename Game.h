@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
+
 #include "StepTimer.h"
 #include "ArcBall.h"
 
@@ -57,6 +60,10 @@ private:
     void CameraHome();
 
     void CycleBackgroundColor();
+
+#ifdef _XBOX_ONE
+    void EnumerateModelFiles();
+#endif
 
     // Application state
 #ifdef _XBOX_ONE
@@ -142,4 +149,8 @@ private:
 
     ArcBall                                         m_ballCamera;
     ArcBall                                         m_ballModel;
+
+    int                                             m_selectFile;
+    int                                             m_firstFile;
+    std::vector<std::wstring>                       m_fileNames;
 };
