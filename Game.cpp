@@ -111,7 +111,7 @@ void Game::Update(DX::StepTimer const& timer)
             else if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
             {
                 ++m_selectFile;
-                if (m_selectFile >= m_fileNames.size())
+                if (m_selectFile >= int(m_fileNames.size()))
                     m_selectFile = 0;
             }
             else if (gpad.IsAPressed())
@@ -412,7 +412,7 @@ void Game::Render()
             m_firstFile = m_selectFile;
 
         float y = 200.f;
-        for (int j = m_firstFile; j < m_fileNames.size(); ++j)
+        for (int j = m_firstFile; j < int(m_fileNames.size()); ++j)
         {
             m_fontComic->DrawString(m_spriteBatch.get(), m_fileNames[j].c_str(), XMFLOAT2(50, y), (m_selectFile == j) ? Colors::Yellow : Colors::Gray );
             y += spacing;
