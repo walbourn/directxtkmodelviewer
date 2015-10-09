@@ -11,7 +11,7 @@ BUILD INSTRUCTIONS
 
 ***PC***
 
-Run VS 2012
+Run VS 2013
 
 Open Project/Solution... "DirectXTKModelViewer_Desktop_2013.sln"
 
@@ -102,4 +102,4 @@ GAMEPAD:
 NOTE: For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
 the system:
 
-  xpcp /x/title <source directory> xd:\
+  xbcp /x/title <source directory> xd:\
