@@ -4,18 +4,18 @@ Model Viewer for DirectX Tool Kit
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-October 1, 2015
+October 9, 2015
 
 ------------------------------------------------------------------------------------------
 BUILD INSTRUCTIONS
 
 ***PC***
 
-Run VS 2013
+Run VS 2013 or 2015
 
-Open Project/Solution... "DirectXTKModelViewer_Desktop_2013.sln"
+Open Project/Solution... "DirectXTKModelViewer_Desktop_201x.sln"
 
-Ensure "DirectXTKModelViewer_Desktop_2013" is the "StartUp Project"
+Ensure "DirectXTKModelViewer_Desktop_201x" is the "StartUp Project"
 
 Build and Run (F5)
 
@@ -34,7 +34,7 @@ Open Project/Solution... "DirectXTKModelViewer_XDK_2015.sln"
 
 Ensure "DirectXTKModelViewer_XDK_2015" is the "StartUp Project"
 
-Build and Run (F5)
+Build and Run (F5) or use Deploy Solution
 
 
 
