@@ -4,7 +4,7 @@ Model Viewer for DirectX Tool Kit
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-October 9, 2015
+November 5, 2015
 
 ------------------------------------------------------------------------------------------
 BUILD INSTRUCTIONS
@@ -26,7 +26,7 @@ Open "Xbox One XDK Command Prompt"
 
 cd to DirectXTK\Src\Shaders
 
-run "CompiledShaders.cmd xbox"
+run "CompileShaders.cmd xbox"
 
 Run VS 2015
 
