@@ -389,10 +389,20 @@ void Game::Render()
         {
             m_spriteBatch->Begin();
 
+            Viewport vp(0.0f, 0.0f, static_cast<float>(m_outputWidth), static_cast<float>(m_outputHeight));
+
+            Vector3 cameraPos = vp.Unproject(Vector3(static_cast<float>(m_outputWidth) / 2.f, static_cast<float>(m_outputHeight) / 2.f, 0),
+                                             m_proj, m_view, m_world);
+
+            WCHAR szCamera[128];
+            swprintf_s(szCamera,   L"     Camera: (%8.4f,%8.4f,%8.4f) Look At: (%8.4f,%8.4f,%8.4f)", cameraPos.x, cameraPos.y, cameraPos.z, m_cameraFocus.x, m_cameraFocus.y, m_cameraFocus.z);
+
 #ifdef _XBOX_ONE
             m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 50), m_hudColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 70), m_hudColor);
 #else
             m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_hudColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(10, 30), m_hudColor);
 #endif
 
             m_spriteBatch->End();
