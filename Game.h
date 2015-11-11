@@ -124,9 +124,9 @@ private:
 
     DirectX::SimpleMath::Vector3                    m_cameraFocus;
     DirectX::SimpleMath::Quaternion                 m_cameraRot;
-    DirectX::SimpleMath::Vector4                    m_clearColor;
-    DirectX::SimpleMath::Vector4                    m_gridColor;
-    DirectX::SimpleMath::Vector4                    m_hudColor;
+    DirectX::SimpleMath::Color                      m_clearColor;
+    DirectX::SimpleMath::Color                      m_gridColor;
+    DirectX::SimpleMath::Color                      m_hudColor;
 
     DirectX::SimpleMath::Quaternion                 m_modelRot;
 

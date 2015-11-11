@@ -399,7 +399,7 @@ void Game::Render()
 
 #ifdef _XBOX_ONE
             m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 50), m_hudColor);
-            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 70), m_hudColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(50, 70), m_hudColor);
 #else
             m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_hudColor);
             m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(10, 30), m_hudColor);
@@ -438,13 +438,7 @@ void Game::Render()
 void Game::Clear()
 {
     // Clear the views
-    XMVECTORF32 clearColor;
-#ifdef _XBOX_ONE
-    clearColor.v = XMColorSRGBToRGB(m_clearColor);
-#else
-    clearColor.v = m_clearColor;
-#endif
-    m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), clearColor);
+    m_d3dContext->ClearRenderTargetView(m_renderTargetView.Get(), m_clearColor);
     m_d3dContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
     m_d3dContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
@@ -1048,7 +1042,7 @@ void Game::CycleBackgroundColor()
     {
         m_clearColor = Colors::White.v;
         m_gridColor = Colors::Black.v;
-        m_hudColor = Colors::Green.v;
+        m_hudColor = Colors::Black.v;
     }
     else
     {
