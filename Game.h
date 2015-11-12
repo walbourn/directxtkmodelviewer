@@ -56,6 +56,7 @@ private:
 
     void LoadModel();
     void DrawGrid();
+    void DrawCross();
 
     void CameraHome();
 
@@ -124,9 +125,9 @@ private:
 
     DirectX::SimpleMath::Vector3                    m_cameraFocus;
     DirectX::SimpleMath::Quaternion                 m_cameraRot;
+    DirectX::SimpleMath::Quaternion                 m_viewRot;
     DirectX::SimpleMath::Color                      m_clearColor;
-    DirectX::SimpleMath::Color                      m_gridColor;
-    DirectX::SimpleMath::Color                      m_hudColor;
+    DirectX::SimpleMath::Color                      m_uiColor;
 
     DirectX::SimpleMath::Quaternion                 m_modelRot;
 
@@ -135,13 +136,17 @@ private:
     float                                           m_zoom;
     float                                           m_distance;
     float                                           m_farPlane;
+    float                                           m_sensitivity;
     size_t                                          m_gridDivs;
 
     bool                                            m_showHud;
+    bool                                            m_showCross;
     bool                                            m_showGrid;
+    bool                                            m_usingGamepad;
     bool                                            m_wireframe;
     bool                                            m_reloadModel;
     bool                                            m_lhcoords;
+    bool                                            m_fpscamera;
 
     WCHAR                                           m_szModelName[MAX_PATH];
     WCHAR                                           m_szStatus[ 512 ];

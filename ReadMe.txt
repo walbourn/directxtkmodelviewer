@@ -4,7 +4,7 @@ Model Viewer for DirectX Tool Kit
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-November 5, 2015
+November 12, 2015
 
 ------------------------------------------------------------------------------------------
 BUILD INSTRUCTIONS
@@ -53,29 +53,33 @@ a Open File Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load
 MOUSE:
    Press and hold LEFT mouse button to rotate view (SHIFT+LEFT button rotates object instead)
 
-   Press and hold RIGHT mouse button to translate view
+   Press and hold RIGHT mouse button to translate view in XY (SHIFT+RIGHT translates in Z)
 
    Scroll wheel controls zoom (i.e. distance between camera and focus point)
 
 KEYBOARD:
-   Up, Down, Right, Left, PageUp, and PageDown translate the view
+
+   W/S and PageUp/PageDown translates in Z
+   A/D and Left/Right translates in X
+   Up/Down translates in Y
+
+   Q/E glance left/right
+   Space glance up
+   X glance down
+
+   C cycles background color
+   G toggles the grid display
+   H toggles HUD display
+   J toggles the cross display
+   R toggles wireframe
+
+   O loads model          
 
    Home key resets camera to default position
 
    End key resets model to default rotation
 
-   G toggles the grid display
-
    +/- scales the grid size
-
-   W toggles wireframe
-
-   H toggles HUD display
-
-   B cycles background color
-
-   O loads model          
-
 
 ***Xbox One***
 
@@ -83,21 +87,52 @@ For Xbox One, only the GamePad controls are available. When you presse the "View
 the SDKMESH, CMO, and VBO files in the root of the D:\ drive and allows you to select one of them to load.
 
 GAMEPAD:
-   Left thumb stick controls translation of view: X/Y by deafult, or Z if left stick button is depressed
 
-   Right thumb stick controls rotation of camera
+    A - Change modes Orbit vs. FPS
+    B - Toggles wireframe
+    X - Cycles grid, viewpoint cross, and HUD display
+    Y - Cycle background color
 
-   Right/left trigger controls 'zoom' (i.e. distance between camera and focus point)
+    Right Trigger – Zoom In
+    Left Trigger – Zoom Out
 
-   DPAD Up cycle backgroundc olor
+    DPAD
+        U – Translate Up
+        D – Translate Down
+        R – Translate Right
+        L – Translate Left
 
-   DPAD Down toggles wireframe
+    Right Bumper – Increment translate sensitivity
+    Left Bumper – Decrement translate sensitivity
 
-   DPAD Left toggles the grid display
+    Left Thumbstick button - Frame scene extents
 
-   DPAD Right toggles the HUD display
+    Orbit
+        Right Thumbstick
+              R – Orbit Right
+              L – Orbit Left
+              U – Orbit Up
+              D – Orbit Down
+              Click – Reset View to Default
 
-   Y resets camera/model to default position
+        Left Thumbstick
+              R – Rotate (Roll) Right
+              L – Rotate (Roll) Left
+              U – Move Towards Origin
+              D – Move Away from Origin
+
+    FPS
+        Right Thumbstick
+              R – Look Right
+              L – Look Left
+              U – Look Up
+              D – Look Down
+
+        Left Thumbstick
+              R – Translate Right
+              L – Translate Left
+              U – Translate Forward
+              D – Translate Back
 
 NOTE: For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
 the system:

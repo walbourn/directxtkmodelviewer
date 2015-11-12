@@ -28,18 +28,21 @@ Game::Game() :
     m_zoom(1.f),
     m_distance(10.f),
     m_farPlane(10000.f),
+    m_sensitivity(1.f),
     m_gridDivs(20),
     m_showHud(true),
+    m_showCross(true),
     m_showGrid(false),
+    m_usingGamepad(false),
     m_wireframe(false),
     m_reloadModel(false),
     m_lhcoords(true),
+    m_fpscamera(false),
     m_selectFile(0),
     m_firstFile(0)
-    {
+{
     m_clearColor = Colors::Black.v;
-    m_gridColor = Colors::Yellow.v;
-    m_hudColor = Colors::Yellow.v;
+    m_uiColor = Colors::Yellow.v;
 
     *m_szModelName = 0;
     *m_szStatus = 0;
@@ -95,9 +98,13 @@ void Game::Update(DX::StepTimer const& timer)
 
     float elapsedTime = float(timer.GetElapsedSeconds());
 
+    float handed = (m_lhcoords) ? 1.f : -1.f;
+
     auto gpad = m_gamepad->GetState(0);
     if (gpad.IsConnected())
     {
+        m_usingGamepad = true;
+
         m_gamepadButtonTracker.Update(gpad);
 
         if (!m_fileNames.empty())
@@ -132,31 +139,84 @@ void Game::Update(DX::StepTimer const& timer)
             // Translate camera
             Vector3 move;
 
-            if (gpad.IsLeftStickPressed())
+            if (m_fpscamera)
             {
-                move.z = (m_lhcoords) ? gpad.thumbSticks.leftY : -gpad.thumbSticks.leftY;
+                move.x = gpad.thumbSticks.leftX;
+                move.z =  gpad.thumbSticks.leftY * handed;
             }
             else
             {
-                move.x = gpad.thumbSticks.leftX;
-                move.y = gpad.thumbSticks.leftY;
+                move.z = gpad.thumbSticks.leftY * handed;
             }
 
-            m_cameraFocus += move * m_distance * elapsedTime;
+            if (gpad.IsDPadUpPressed())
+            {
+                move.y += 1.f;
+            }
+            else if (gpad.IsDPadDownPressed())
+            {
+                move.y -= 1.f;
+            }
+
+            if (gpad.IsDPadLeftPressed())
+            {
+                move.x -= 1.f;
+            }
+            else if (gpad.IsDPadRightPressed())
+            {
+                move.x += 1.f;
+            }
+
+            Matrix im;
+            m_view.Invert(im);
+            move = Vector3::TransformNormal(move, im);
 
             // Rotate camera
-            Vector2 orbit(gpad.thumbSticks.rightX, gpad.thumbSticks.rightY);
-            orbit *= elapsedTime;
+            if (m_fpscamera)
+            {
+                m_viewRot = Quaternion::CreateFromAxisAngle(Vector3::Right, gpad.thumbSticks.rightY * XM_PI / 2.f * handed);
+                m_viewRot  *= Quaternion::CreateFromAxisAngle(Vector3::Up, -gpad.thumbSticks.rightX * XM_PI / 2.f * handed);
+                m_viewRot.Normalize();
+            }
+            else
+            {
+                Vector3 orbit(gpad.thumbSticks.rightX, gpad.thumbSticks.rightY, gpad.thumbSticks.leftX);
+                orbit *= elapsedTime * m_sensitivity;
 
-            m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Right, (m_lhcoords) ? -orbit.y : orbit.y);
-            m_cameraRot *= Quaternion::CreateFromAxisAngle(Vector3::Up, orbit.x);
-            m_cameraRot.Normalize();
+                m_cameraRot *= Quaternion::CreateFromAxisAngle(im.Right(), orbit.y * handed);
+                m_cameraRot *= Quaternion::CreateFromAxisAngle(im.Up(), -orbit.x * handed);
+                m_cameraRot *= Quaternion::CreateFromAxisAngle(im.Forward(), orbit.z);
+                m_cameraRot.Normalize();
+            }
+
+            m_cameraFocus += move * m_distance * elapsedTime * m_sensitivity;
 
             // Zoom camera
-            m_zoom += (gpad.triggers.right - gpad.triggers.left) * elapsedTime;
+            m_zoom += (gpad.triggers.left - gpad.triggers.right) * elapsedTime * m_sensitivity;
             m_zoom = std::max(m_zoom, 0.1f);
 
             // Other controls
+            if (m_gamepadButtonTracker.leftShoulder == GamePad::ButtonStateTracker::PRESSED
+                && m_gamepadButtonTracker.rightShoulder == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_sensitivity = 1.f;
+            }
+            else
+            {
+                if (gpad.IsRightShoulderPressed())
+                {
+                    m_sensitivity += 0.01f;
+                    if (m_sensitivity > 10.f)
+                        m_sensitivity = 10.f;
+                }
+                else if (gpad.IsLeftShoulderPressed())
+                {
+                    m_sensitivity -= 0.01f;
+                    if (m_sensitivity < 0.01f)
+                        m_sensitivity = 0.01f;
+                }
+            }
+
             if (gpad.IsViewPressed())
             {
 #ifdef _XBOX_ONE
@@ -166,36 +226,50 @@ void Game::Update(DX::StepTimer const& timer)
 #endif
             }
 
-            if (m_gamepadButtonTracker.dpadUp == GamePad::ButtonStateTracker::PRESSED)
-            {
-                CycleBackgroundColor();
-            }
-
-            if (m_gamepadButtonTracker.dpadDown == GamePad::ButtonStateTracker::PRESSED)
+            if (m_gamepadButtonTracker.b == GamePad::ButtonStateTracker::PRESSED)
             {
                 m_wireframe = !m_wireframe;
             }
 
-            if (m_gamepadButtonTracker.dpadLeft == GamePad::ButtonStateTracker::PRESSED)
+            if (m_gamepadButtonTracker.x == GamePad::ButtonStateTracker::PRESSED)
             {
-                m_showGrid = !m_showGrid;
-            }
+                int value = ((int)m_showGrid << 2) | ((int)m_showHud << 1) | ((int)m_showCross);
 
-            if (m_gamepadButtonTracker.dpadRight == GamePad::ButtonStateTracker::PRESSED)
-            {
-                m_showHud = !m_showHud;
+                value = (value + 1) & 0x7;
+
+                m_showCross = (value & 0x1) != 0;
+                m_showHud   = (value & 0x2) != 0;
+                m_showGrid  = (value & 0x4) != 0;
             }
 
             if (m_gamepadButtonTracker.y == GamePad::ButtonStateTracker::PRESSED)
             {
+                CycleBackgroundColor();
+            }
+
+            if ( m_gamepadButtonTracker.a == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_fpscamera = !m_fpscamera;
+                m_viewRot = Quaternion::Identity;
+            }
+
+            if (m_gamepadButtonTracker.leftStick == GamePad::ButtonStateTracker::PRESSED)
+            {
                 CameraHome();
                 m_modelRot = Quaternion::Identity;
+            }
+
+            if (!m_fpscamera && m_gamepadButtonTracker.rightStick == GamePad::ButtonStateTracker::PRESSED)
+            {
+                m_viewRot = m_cameraRot = m_modelRot = Quaternion::Identity;
             }
         }
     }
 #ifndef _XBOX_ONE
     else
     {
+        m_usingGamepad = false;
+
         m_gamepadButtonTracker.Reset();
 
         auto kb = m_keyboard->GetState();
@@ -203,23 +277,52 @@ void Game::Update(DX::StepTimer const& timer)
         // Camera movement
         Vector3 move = Vector3::Zero;
 
+        float scale = m_distance;
+        if (kb.LeftShift || kb.RightShift)
+            scale *= 0.5f;
+
         if (kb.Up)
-            move.y += m_distance;
+            move.y += scale;
 
         if (kb.Down)
-            move.y -= m_distance;
+            move.y -= scale;
 
-        if (kb.Right)
-            move.x += m_distance;
+        if (kb.Right || kb.D)
+            move.x += scale;
 
-        if (kb.Left)
-            move.x -= m_distance;
+        if (kb.Left || kb.A)
+            move.x -= scale;
 
-        if (kb.PageUp)
-            move.z += m_distance;
+        if (kb.PageUp || kb.W)
+            move.z += scale * handed;
 
-        if (kb.PageDown)
-            move.z -= m_distance;
+        if (kb.PageDown || kb.S)
+            move.z -= scale * handed;
+
+        if (kb.Space)
+        {
+            m_viewRot = Quaternion::CreateFromAxisAngle(Vector3::Right, XM_PI / 2.f * handed);
+        }
+        else if (kb.X)
+        {
+            m_viewRot = Quaternion::CreateFromAxisAngle(Vector3::Right, -XM_PI / 2.f * handed);
+        }
+        else if (kb.Q)
+        {
+            m_viewRot = Quaternion::CreateFromAxisAngle(Vector3::Up, XM_PI / 2.f * handed);
+        }
+        else if (kb.E)
+        {
+            m_viewRot = Quaternion::CreateFromAxisAngle(Vector3::Up, -XM_PI / 2.f * handed);
+        }
+        else
+        {
+            m_viewRot = Quaternion::Identity;
+        }
+
+        Matrix im;
+        m_view.Invert(im);
+        move = Vector3::TransformNormal(move, im);
 
         m_cameraFocus += move * elapsedTime;
 
@@ -231,7 +334,7 @@ void Game::Update(DX::StepTimer const& timer)
 
         if (kb.End)
         {
-            m_modelRot = Quaternion::Identity;
+            m_viewRot = m_modelRot = Quaternion::Identity;
         }
 
         if (m_showGrid)
@@ -250,16 +353,19 @@ void Game::Update(DX::StepTimer const& timer)
 
         m_keyboardTracker.Update(kb);
 
+        if (m_keyboardTracker.pressed.J)
+            m_showCross = !m_showCross;
+
         if (m_keyboardTracker.pressed.G)
             m_showGrid = !m_showGrid;
 
-        if (m_keyboardTracker.pressed.W)
+        if (m_keyboardTracker.pressed.R)
             m_wireframe = !m_wireframe;
 
         if (m_keyboardTracker.pressed.H)
             m_showHud = !m_showHud;
 
-        if (m_keyboardTracker.pressed.B)
+        if (m_keyboardTracker.pressed.C)
             CycleBackgroundColor();
 
         if (m_keyboardTracker.pressed.O)
@@ -275,7 +381,17 @@ void Game::Update(DX::StepTimer const& timer)
         if (mouse.positionMode == Mouse::MODE_RELATIVE)
         {
             // Translate camera
-            Vector3 delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
+            Vector3 delta;
+            if (kb.LeftShift || kb.RightShift)
+            {
+                delta = Vector3(0.f, 0.f, -float(mouse.y) * handed) * m_distance * elapsedTime;
+            }
+            else
+            {
+                delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
+            }
+
+            delta = Vector3::TransformNormal(delta, im);
 
             m_cameraFocus += delta * elapsedTime;
         }
@@ -289,7 +405,8 @@ void Game::Update(DX::StepTimer const& timer)
         {
             // Rotate camera
             m_ballCamera.OnMove(mouse.x, mouse.y);
-            m_cameraRot = m_ballCamera.GetQuat();
+            Quaternion q = m_ballCamera.GetQuat();
+            q.Inverse(m_cameraRot);
         }
         else
         {
@@ -327,27 +444,23 @@ void Game::Update(DX::StepTimer const& timer)
 
     // Update camera
     Vector3 position = m_cameraFocus;
-    
-    if (m_lhcoords)
-    {
-        position += (m_distance * m_zoom) * Vector3::Forward;
-    }
-    else
-    {
-        position += (m_distance * m_zoom) * Vector3::Backward;
-    }
+
+    Vector3 dir = Vector3::Transform((m_lhcoords) ? Vector3::Forward : Vector3::Backward, m_cameraRot);
+    Vector3 up = Vector3::Transform(Vector3::Up, m_cameraRot);
+
+    position += (m_distance * m_zoom) * dir;
         
     Matrix view;
     if (m_lhcoords)
     {
-        view = XMMatrixLookAtLH(position, m_cameraFocus, Vector3::Up);
+        view = XMMatrixLookAtLH(position, m_cameraFocus, up);
     }
     else
     {
-        view = Matrix::CreateLookAt(position, m_cameraFocus, Vector3::Up);
+        view = Matrix::CreateLookAt(position, m_cameraFocus, up);
     }
 
-    m_view = Matrix::CreateFromQuaternion(m_cameraRot) * view;
+    m_view = view * Matrix::CreateFromQuaternion(m_viewRot);
 
     m_world = Matrix::CreateFromQuaternion(m_modelRot);
 }
@@ -364,6 +477,11 @@ void Game::Render()
     if (m_showGrid)
     {
         DrawGrid();
+    }
+
+    if (m_showCross)
+    {
+        DrawCross();
     }
 
     if (!m_model)
@@ -392,17 +510,35 @@ void Game::Render()
             Viewport vp(0.0f, 0.0f, static_cast<float>(m_outputWidth), static_cast<float>(m_outputHeight));
 
             Vector3 cameraPos = vp.Unproject(Vector3(static_cast<float>(m_outputWidth) / 2.f, static_cast<float>(m_outputHeight) / 2.f, 0),
-                                             m_proj, m_view, m_world);
+                                             m_proj, m_view, Matrix::Identity);
+
+            Vector3 up = Vector3::TransformNormal(Vector3::Up, m_view);
 
             WCHAR szCamera[128];
-            swprintf_s(szCamera,   L"     Camera: (%8.4f,%8.4f,%8.4f) Look At: (%8.4f,%8.4f,%8.4f)", cameraPos.x, cameraPos.y, cameraPos.z, m_cameraFocus.x, m_cameraFocus.y, m_cameraFocus.z);
+            swprintf_s(szCamera, L"     Camera: (%8.4f,%8.4f,%8.4f) Look At: (%8.4f,%8.4f,%8.4f) Up: (%8.4f,%8.4f,%8.4f)",
+                                 cameraPos.x, cameraPos.y, cameraPos.z,
+                                 m_cameraFocus.x, m_cameraFocus.y, m_cameraFocus.z,
+                                 up.x, up.y, up.z);
+
+            WCHAR szMode[64];
+            swprintf_s(szMode, L" %ls (Sensitivity: %8.4f)", (m_fpscamera) ? L"  FPS" : L"Orbit", m_sensitivity);
 
 #ifdef _XBOX_ONE
-            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(50, 50), m_hudColor);
-            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(50, 70), m_hudColor);
+            RECT rct = vp.ComputeTitleSafeArea(m_outputWidth, m_outputHeight);
+
+            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(float(rct.left), float(rct.top)), m_uiColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(float(rct.left), float(rct.top + 20)), m_uiColor);
+            if (m_usingGamepad)
+            {
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szMode, XMFLOAT2(float(rct.right - 100), float(rct.bottom - 20.f)), m_uiColor);
+            }
 #else
-            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_hudColor);
-            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(10, 30), m_hudColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(10, 10), m_uiColor);
+            m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(10, 30), m_uiColor);
+            if (m_usingGamepad)
+            {
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szMode, XMFLOAT2(m_outputWidth - 300.f, m_outputHeight - 20.f), m_uiColor);
+            }
 #endif
 
             m_spriteBatch->End();
@@ -950,7 +1086,7 @@ void Game::DrawGrid()
     Vector3 yaxis(0.f, 0.f, m_gridScale);
     Vector3 origin = Vector3::Zero;
 
-    XMVECTOR color = m_gridColor;
+    XMVECTOR color = m_uiColor;
 
     for( size_t i = 0; i <= m_gridDivs; ++i )
     {
@@ -979,11 +1115,52 @@ void Game::DrawGrid()
     m_lineBatch->End();
 }
 
+void Game::DrawCross()
+{
+    auto ctx = m_d3dContext.Get();
+    ctx->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
+    ctx->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+    ctx->RSSetState(m_states->CullCounterClockwise());
+
+    m_lineEffect->SetView(m_view);
+
+    m_lineEffect->Apply(ctx);
+
+    m_d3dContext->IASetInputLayout(m_lineLayout.Get());
+
+    XMVECTOR color = m_uiColor;
+
+    m_lineBatch->Begin();
+
+    float cross = m_distance / 100.f;
+
+    Vector3 xaxis(cross, 0.f, 0.f);
+    Vector3 yaxis(0.f, cross, 0.f);
+    Vector3 zaxis(0.f, 0.f, cross);
+
+    VertexPositionColor v1(m_cameraFocus - xaxis, color);
+    VertexPositionColor v2(m_cameraFocus + xaxis, color);
+
+    m_lineBatch->DrawLine(v1, v2);
+
+    VertexPositionColor v3(m_cameraFocus - yaxis, color);
+    VertexPositionColor v4(m_cameraFocus + yaxis, color);
+
+    m_lineBatch->DrawLine(v3, v4);
+
+    VertexPositionColor v5(m_cameraFocus - zaxis, color);
+    VertexPositionColor v6(m_cameraFocus + zaxis, color);
+
+    m_lineBatch->DrawLine(v5, v6);
+
+    m_lineBatch->End();
+}
+
 void Game::CameraHome()
 {
     m_mouse->ResetScrollWheelValue();
     m_zoom = 1.f;
-    m_cameraRot = Quaternion::Identity;
+    m_viewRot = m_cameraRot = Quaternion::Identity;
     m_ballCamera.Reset();
 
     if (!m_model)
@@ -1035,20 +1212,17 @@ void Game::CycleBackgroundColor()
     if (m_clearColor == Vector4(Colors::CornflowerBlue.v))
     {
         m_clearColor = Colors::Black.v;
-        m_gridColor = Colors::Yellow.v;
-        m_hudColor = Colors::Yellow.v;
+        m_uiColor = Colors::Yellow.v;
     }
     else if (m_clearColor == Vector4(Colors::Black.v))
     {
         m_clearColor = Colors::White.v;
-        m_gridColor = Colors::Black.v;
-        m_hudColor = Colors::Black.v;
+        m_uiColor = Colors::Black.v;
     }
     else
     {
         m_clearColor = Colors::CornflowerBlue.v;
-        m_gridColor = Colors::White.v;
-        m_hudColor = Colors::White.v;
+        m_uiColor = Colors::White.v;
     }
 }
 
