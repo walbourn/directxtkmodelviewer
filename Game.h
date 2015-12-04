@@ -62,6 +62,10 @@ private:
 
     void CycleBackgroundColor();
 
+    void CreateProjection();
+
+    void RotateView( DirectX::SimpleMath::Quaternion& q );
+
 #ifdef _XBOX_ONE
     void EnumerateModelFiles();
 #endif
@@ -124,6 +128,7 @@ private:
     DirectX::SimpleMath::Matrix                     m_proj;
 
     DirectX::SimpleMath::Vector3                    m_cameraFocus;
+    DirectX::SimpleMath::Vector3                    m_lastCameraPos;
     DirectX::SimpleMath::Quaternion                 m_cameraRot;
     DirectX::SimpleMath::Quaternion                 m_viewRot;
     DirectX::SimpleMath::Color                      m_clearColor;
@@ -144,6 +149,7 @@ private:
     bool                                            m_showGrid;
     bool                                            m_usingGamepad;
     bool                                            m_wireframe;
+    bool                                            m_ccw;
     bool                                            m_reloadModel;
     bool                                            m_lhcoords;
     bool                                            m_fpscamera;
