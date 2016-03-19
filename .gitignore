@@ -10,11 +10,13 @@
 *.i
 *.vspscc
 *.opensdf
+*.opendb
 *.ipch
 *.cache
 *.tlog
 *.lastbuildstate
 *.ilk
+*.VC.db
 ARM
 Durango
 "Generated Files"
