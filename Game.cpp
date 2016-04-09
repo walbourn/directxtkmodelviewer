@@ -68,11 +68,11 @@ void Game::Initialize(HWND window, int width, int height)
 
     CreateResources();
 
-    m_gamepad.reset(new GamePad);
+    m_gamepad = std::make_unique<GamePad>();
 
-    m_keyboard.reset(new Keyboard);
+    m_keyboard = std::make_unique<Keyboard>();
 
-    m_mouse.reset(new Mouse);
+    m_mouse = std::make_unique<Mouse>();
 #ifndef _XBOX_ONE
     m_mouse->SetWindow(window);
 #endif
@@ -847,14 +847,14 @@ void Game::CreateDevice()
 
     auto ctx = m_d3dContext.Get();
 
-    m_spriteBatch.reset(new SpriteBatch(ctx));
+    m_spriteBatch = std::make_unique<SpriteBatch>(ctx);
 
-    m_fontConsolas.reset(new SpriteFont(m_d3dDevice.Get(), L"consolas.spritefont"));
-    m_fontComic.reset(new SpriteFont(m_d3dDevice.Get(), L"comic.spritefont"));
+    m_fontConsolas = std::make_unique<SpriteFont>(m_d3dDevice.Get(), L"consolas.spritefont");
+    m_fontComic = std::make_unique<SpriteFont>(m_d3dDevice.Get(), L"comic.spritefont");
 
-    m_states.reset(new CommonStates(m_d3dDevice.Get()));
+    m_states = std::make_unique<CommonStates>(m_d3dDevice.Get());
 
-    m_lineEffect.reset(new BasicEffect(m_d3dDevice.Get()));
+    m_lineEffect = std::make_unique<BasicEffect>(m_d3dDevice.Get());
     m_lineEffect->SetVertexColorEnabled(true);
 
     {
@@ -867,7 +867,7 @@ void Game::CreateDevice()
             shaderByteCode, byteCodeLength, m_lineLayout.ReleaseAndGetAddressOf()));
     }
 
-    m_lineBatch.reset(new PrimitiveBatch<VertexPositionColor>(ctx));
+    m_lineBatch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(ctx);
 
     m_world = Matrix::Identity;
 }
