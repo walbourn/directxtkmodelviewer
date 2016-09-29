@@ -4,12 +4,12 @@
          IgnorableNamespaces="mx">
   
   <Identity Name="94ca66c8-6974-4e59-beb3-72eb8eb441ef"
-            Publisher="CN=Publisher"
+            Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=U"
             Version="1.0.0.0" />
   
   <Properties>
     <DisplayName>DirectXTKModelViewer</DisplayName>
-    <PublisherDisplayName>PublisherDisplayName</PublisherDisplayName>
+    <PublisherDisplayName>Xbox Advanced Technology Group</PublisherDisplayName>
     <Logo>StoreLogo.png</Logo>
     <Description>DirectXTKModelViewer</Description>
   </Properties>

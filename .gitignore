@@ -22,6 +22,7 @@ Durango
 "Generated Files"
 Bin
 DirectXTK/Src/Shaders/Compiled/XboxOne*.inc
+DirectXTK/Src/Shaders/Compiled/XboxOne*.pdb
 ipch
 Debug
 Profile

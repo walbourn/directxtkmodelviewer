@@ -10,10 +10,19 @@
 #include "StepTimer.h"
 #include "ArcBall.h"
 
+#if defined(_XBOX_ONE) && defined(_TITLE)
+#include "DeviceResourcesXDK.h"
+#else
+#include "DeviceResourcesPC.h"
+#endif
+
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop
 class Game
+#if !defined(_XBOX_ONE) || !defined(_TITLE)
+    : public DX::IDeviceNotify
+#endif
 {
 public:
 
@@ -28,11 +37,12 @@ public:
 
     // Basic game loop
     void Tick();
-    void Render();
 
-    // Rendering helpers
-    void Clear();
-    void Present();
+#if !defined(_XBOX_ONE) || !defined(_TITLE)
+    // IDeviceNotify
+    virtual void OnDeviceLost() override;
+    virtual void OnDeviceRestored() override;
+#endif
 
     // Messages
     void OnActivated();
@@ -48,12 +58,13 @@ public:
 private:
 
     void Update(DX::StepTimer const& timer);
+    void Render();
 
-    void CreateDevice();
-    void CreateResources();
+    void Clear();
+
+    void CreateDeviceDependentResources();
+    void CreateWindowSizeDependentResources();
     
-    void OnDeviceLost();
-
     void LoadModel();
     void DrawGrid();
     void DrawCross();
@@ -70,40 +81,15 @@ private:
     void EnumerateModelFiles();
 #endif
 
-    // Application state
-#ifdef _XBOX_ONE
-    IUnknown*                                       m_window;
-#else
-    HWND                                            m_window;
-#endif
-    int                                             m_outputWidth;
-    int                                             m_outputHeight;
+    // Device resources.
+    std::unique_ptr<DX::DeviceResources>            m_deviceResources;
 
-    // Direct3D Objects
-    D3D_FEATURE_LEVEL                               m_featureLevel;
-#ifdef _XBOX_ONE
-    Microsoft::WRL::ComPtr<ID3D11DeviceX>           m_d3dDevice;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContextX>    m_d3dContext;
-#else
-    Microsoft::WRL::ComPtr<ID3D11Device>            m_d3dDevice;
-    Microsoft::WRL::ComPtr<ID3D11Device1>           m_d3dDevice1;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContext>     m_d3dContext;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContext1>    m_d3dContext1;
-#endif
-
-    // Rendering resources
-#ifdef _XBOX_ONE
-    Microsoft::WRL::ComPtr<IDXGISwapChain1>         m_swapChain;
-#else
-    Microsoft::WRL::ComPtr<IDXGISwapChain>          m_swapChain;
-    Microsoft::WRL::ComPtr<IDXGISwapChain1>         m_swapChain1;
-#endif
-    Microsoft::WRL::ComPtr<ID3D11RenderTargetView>  m_renderTargetView;
-    Microsoft::WRL::ComPtr<ID3D11DepthStencilView>  m_depthStencilView;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D>         m_depthStencil;
-
-    // Game state
+    // Rendering loop timer.
     DX::StepTimer                                   m_timer;
+
+#if defined(_XBOX_ONE) && defined(_TITLE)
+    std::unique_ptr<DirectX::GraphicsMemory>        m_graphicsMemory;
+#endif
 
     std::unique_ptr<DirectX::SpriteBatch>           m_spriteBatch;
     std::unique_ptr<DirectX::SpriteFont>            m_fontConsolas;

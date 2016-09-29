@@ -49,6 +49,7 @@ namespace DX
 #include <CommonStates.h>
 #include <Effects.h>
 #include <GamePad.h>
+#include <GraphicsMemory.h>
 #include <Keyboard.h>
 #include <Model.h>
 #include <Mouse.h>
