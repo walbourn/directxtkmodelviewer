@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 
-//#define GAMMA_CORRECT_RENDERING
+#define GAMMA_CORRECT_RENDERING
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -14,11 +14,13 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
-    // TODO - GAMMA_CORRECT_RENDERING
-    const XMVECTORF32 c_Yellow = Colors::Yellow;
+#ifdef GAMMA_CORRECT_RENDERING
+    const XMVECTORF32 c_Gray = { 0.215861f, 0.215861f, 0.215861f, 1.f };
+    const XMVECTORF32 c_CornflowerBlue = { 0.127438f, 0.300544f, 0.846873f, 1.f };
+#else
     const XMVECTORF32 c_Gray = Colors::Gray;
-    const XMVECTORF32 c_Red = Colors::Red;
-    const XMVECTORF32 c_Blue = Colors::CornflowerBlue;
+    const XMVECTORF32 c_CornflowerBlue = Colors::CornflowerBlue;
+#endif
 }
 
 
@@ -54,7 +56,7 @@ Game::Game() :
 #endif
 
     m_clearColor = Colors::Black.v;
-    m_uiColor = c_Yellow;
+    m_uiColor = Colors::Yellow;
 
     *m_szModelName = 0;
     *m_szStatus = 0;
@@ -544,11 +546,11 @@ void Game::Render()
 
             if (*m_szError)
             {
-                m_fontComic->DrawString(m_spriteBatch.get(), m_szError, XMFLOAT2(100, 100), c_Red);
+                m_fontComic->DrawString(m_spriteBatch.get(), m_szError, XMFLOAT2(100, 100), Colors::Red);
             }
             else
             {
-                m_fontComic->DrawString(m_spriteBatch.get(), L"No model is loaded\n", XMFLOAT2(100, 100), c_Red);
+                m_fontComic->DrawString(m_spriteBatch.get(), L"No model is loaded\n", XMFLOAT2(100, 100), Colors::Red);
             }
 
             m_spriteBatch->End();
@@ -848,6 +850,10 @@ void Game::LoadModel()
 
     EffectFactory fx(device);
 
+#ifdef GAMMA_CORRECT_RENDERING
+    fx.EnableForceSRGB(true);
+#endif
+
     if (*drive || *path)
     {
         WCHAR dir[MAX_PATH] = { 0 };
@@ -1084,10 +1090,10 @@ void Game::CameraHome()
 
 void Game::CycleBackgroundColor()
 {
-    if (m_clearColor == Vector4(c_Blue.v))
+    if (m_clearColor == Vector4(c_CornflowerBlue.v))
     {
         m_clearColor = Colors::Black.v;
-        m_uiColor = c_Yellow;
+        m_uiColor = Colors::Yellow;
     }
     else if (m_clearColor == Vector4(Colors::Black.v))
     {
@@ -1096,7 +1102,7 @@ void Game::CycleBackgroundColor()
     }
     else
     {
-        m_clearColor = c_Blue.v;
+        m_clearColor = c_CornflowerBlue.v;
         m_uiColor = Colors::White.v;
     }
 }
