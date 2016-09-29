@@ -43,9 +43,9 @@ DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT d
     m_d3dMinFeatureLevel(minFeatureLevel),
     m_window(0),
     m_d3dFeatureLevel(D3D_FEATURE_LEVEL_9_1),
-    m_outputSize{0, 0, 1, 1},
     m_deviceNotify(nullptr)
 {
+    m_outputSize = { 0, 0, 1, 1 };
 }
 
 // Configures the Direct3D device, and stores handles to it and the device context.
