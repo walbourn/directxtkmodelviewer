@@ -29,7 +29,7 @@ public:
     Game();
 
     // Initialization and management
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) && defined(_TITLE)
     void Initialize(IUnknown* window);
 #else
     void Initialize(HWND window, int width, int height);
@@ -77,7 +77,7 @@ private:
 
     void RotateView( DirectX::SimpleMath::Quaternion& q );
 
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) && defined(_TITLE)
     void EnumerateModelFiles();
 #endif
 

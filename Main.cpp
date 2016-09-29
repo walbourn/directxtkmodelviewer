@@ -5,7 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) && defined(_TITLE)
 #include <ppltasks.h>
 
 using namespace concurrency;
@@ -20,7 +20,7 @@ using namespace Windows::Foundation;
 
 using namespace DirectX;
 
-#ifdef _XBOX_ONE
+#if defined(_XBOX_ONE) && defined(_TITLE)
 
 ref class ViewProvider sealed : public IFrameworkView
 {
