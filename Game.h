@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-
 #include "StepTimer.h"
 #include "ArcBall.h"
 

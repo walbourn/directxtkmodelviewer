@@ -19,6 +19,18 @@
 #define _WIN32_WINNT 0x0600
 #include <SDKDDKVer.h>
 
+// DirectX apps don't need GDI
+#define NODRAWTEXT
+
+// Include <mcx.h> if you need this
+#define NOMCX
+
+// Include <winsvc.h> if you need this
+#define NOSERVICE
+
+// WinHelp is deprecated
+#define NOHELP
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <d3d11_1.h>
@@ -33,6 +45,10 @@
 #include <algorithm>
 #include <exception>
 #include <memory>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace DX
 {

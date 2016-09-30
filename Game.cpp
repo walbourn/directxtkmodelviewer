@@ -23,7 +23,6 @@ namespace
 #endif
 }
 
-
 // Constructor.
 Game::Game() :
     m_gridScale(10.f),

@@ -15,7 +15,9 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="ArcBall.h" />
     <ClInclude Include="Game.h" />
-    <ClInclude Include="DeviceResourcesPC.h" />
+    <ClInclude Include="DeviceResourcesPC.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeviceResourcesPC.cpp">
