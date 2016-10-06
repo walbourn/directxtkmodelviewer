@@ -179,7 +179,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindow(L"DirectXTKModelViewerWindowClass", L"DirectXTKModelViewer", WS_OVERLAPPEDWINDOW,
+        HWND hwnd = CreateWindow(L"DirectXTKModelViewerWindowClass", L"DirectXTKModelViewer (DirectX 11)", WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
         if (!hwnd)
