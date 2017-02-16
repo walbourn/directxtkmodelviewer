@@ -772,8 +772,22 @@ void Game::CreateDeviceDependentResources()
 
     m_spriteBatch = std::make_unique<SpriteBatch>(context);
 
-    m_fontConsolas = std::make_unique<SpriteFont>(device, L"consolas.spritefont");
-    m_fontComic = std::make_unique<SpriteFont>(device, L"comic.spritefont");
+#if !defined(_XBOX_ONE) || !defined(_TITLE)
+    HRSRC fontRes = ::FindResource(NULL, MAKEINTRESOURCE(IDR_SPRITE_FONT_CONSOLAS), MAKEINTRESOURCE(RC_SPRITE_FONT_CONSOLAS));
+    unsigned int fontResSize = ::SizeofResource(NULL, fontRes);
+    HGLOBAL fontResData = ::LoadResource(NULL, fontRes);
+    void* pFontResBinary = ::LockResource(fontResData);
+    m_fontConsolas = std::make_unique<SpriteFont>(device, (const uint8_t*)pFontResBinary, fontResSize);
+
+    fontRes = ::FindResource(NULL, MAKEINTRESOURCE(IDR_SPRITE_FONT_COMIC), MAKEINTRESOURCE(RC_SPRITE_FONT_COMIC));
+    fontResSize = ::SizeofResource(NULL, fontRes);
+    fontResData = ::LoadResource(NULL, fontRes);
+    pFontResBinary = ::LockResource(fontResData);
+    m_fontComic = std::make_unique<SpriteFont>(device, (const uint8_t*)pFontResBinary, fontResSize);
+#else
+    m_fontConsolas = std::make_unique<SpriteFont>(device, RC_SPRITE_FONT_CONSOLAS_NAME);
+    m_fontComic = std::make_unique<SpriteFont>(device, RC_SPRITE_FONT_COMIC_NAME);
+#endif
 
     m_states = std::make_unique<CommonStates>(device);
 
