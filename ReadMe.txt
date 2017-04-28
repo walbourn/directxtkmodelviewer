@@ -4,12 +4,12 @@ Model Viewer for DirectX Tool Kit for DirectX 11
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-November 9, 2016
+April 28, 2017
 
 The DirectX Tool Kit Model Viewer is an interactive test application for
 validating .SDKMESH, .VBO, and .CMO files rendered using the DirectX Tool Kit.
 
-The source is written for Visual Studio 2013 or 2015. It is recommended that you make
+The source is written for Visual Studio 2013, 2015, or 2017. It is recommended that you make
 use of the Windows 8.1 SDK and Windows 7 Service Pack 1 or later.
 
 All content and source code for this package are subject to the terms of the MIT License.
@@ -32,30 +32,26 @@ BUILD INSTRUCTIONS
 
 ***PC***
 
-Run VS 2013 or 2015
+Run VS 2013, 2015, or 2017
 
-Open Project/Solution... "DirectXTKModelViewer_Desktop_201x.sln"
+Open Project/Solution... "DirectXTKModelViewer_Desktop_201?.sln"
 
-Ensure "DirectXTKModelViewer_Desktop_201x" is the "StartUp Project"
+Ensure "DirectXTKModelViewer_Desktop_201?" is the "StartUp Project"
 
 Build and Run (F5)
 
 
 ***Xbox One***
 
-Open "Xbox One XDK Command Prompt"
+Run VS 2015 or 2017
 
-cd to DirectXTK\Src\Shaders
+Open Project/Solution... "DirectXTKModelViewer_XDK_201?.sln"
 
-run "CompileShaders.cmd xbox"
-
-Run VS 2015
-
-Open Project/Solution... "DirectXTKModelViewer_XDK_2015.sln"
-
-Ensure "DirectXTKModelViewer_XDK_2015" is the "StartUp Project"
+Ensure "DirectXTKModelViewer_XDK_201?" is the "StartUp Project"
 
 Build and Run (F5) or use Deploy Solution
+
+NOTE: On supported platforms, you can use the -render4K command-line option.
 
 
 ------------------
@@ -164,6 +160,10 @@ the system:
 ---------------
 RELEASE HISTORY
 ---------------
+
+April 28, 2017
+    Added VS 2017 projects
+    Updated for the April 24, 2017 release of DirectX Tool Kit
 
 November 9, 2016
     Updated for the October 6, 2016 release of DirectX Tool Kit
