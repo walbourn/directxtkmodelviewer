@@ -55,7 +55,8 @@ public:
         window->Closed +=
             ref new TypedEventHandler<CoreWindow^, CoreWindowEventArgs^>(this, &ViewProvider::OnWindowClosed);
 
-        m_game->Initialize(reinterpret_cast<IUnknown*>(window));
+        // Moved Game::Initialize to OnActivated to handle command-line parameters
+        m_window = reinterpret_cast<IUnknown*>(window);
     }
 
     virtual void Load(Platform::String^ entryPoint)
@@ -77,6 +78,20 @@ protected:
     void OnActivated(CoreApplicationView^ applicationView, IActivatedEventArgs^ args)
     {
         CoreWindow::GetForCurrentThread()->Activate();
+
+        if (args->Kind == Windows::ApplicationModel::Activation::ActivationKind::Launch)
+        {
+            auto launchArgs = (ILaunchActivatedEventArgs^)args;
+
+            const wchar_t* commandLine = launchArgs->Arguments->Data();
+
+            if (wcsstr(commandLine, L"-render4K") != 0)
+            {
+                DX::DeviceResources::DebugRender4K(true);
+            }
+        }
+
+        m_game->Initialize(reinterpret_cast<IUnknown*>(m_window.Get()));
     }
 
     void OnSuspending(Platform::Object^ sender, SuspendingEventArgs^ args)
@@ -104,6 +119,7 @@ protected:
 private:
     bool                    m_exit;
     std::unique_ptr<Game>   m_game;
+    Microsoft::WRL::ComPtr<IUnknown> m_window;
 };
 
 ref class ViewProviderFactory : IFrameworkViewSource

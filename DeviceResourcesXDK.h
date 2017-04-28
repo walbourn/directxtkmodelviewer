@@ -38,6 +38,11 @@ namespace DX
         D3D11_VIEWPORT          GetScreenViewport() const               { return m_screenViewport; }
         UINT                    GetBackBufferCount() const              { return m_backBufferCount; }
 
+        static void DebugRender4K(bool enable)
+        {
+            s_render4K = enable;
+        }
+
     private:
         // Direct3D objects.
         Microsoft::WRL::ComPtr<ID3D11DeviceX>           m_d3dDevice;
@@ -62,5 +67,8 @@ namespace DX
         RECT                                            m_outputSize;
 
         bool                                            m_fastSemantics;
+
+        // Options.
+        static bool s_render4K;
     };
 }
