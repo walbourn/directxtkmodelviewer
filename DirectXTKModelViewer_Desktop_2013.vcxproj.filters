@@ -18,6 +18,7 @@
     <ClInclude Include="DeviceResourcesPC.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />

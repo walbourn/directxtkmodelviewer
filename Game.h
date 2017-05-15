@@ -6,6 +6,7 @@
 
 #include "StepTimer.h"
 #include "ArcBall.h"
+#include "resource.h"
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
 #include "DeviceResourcesXDK.h"
