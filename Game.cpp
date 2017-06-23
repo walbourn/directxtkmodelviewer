@@ -997,7 +997,7 @@ void Game::DrawGrid()
 {
     auto ctx = m_deviceResources->GetD3DDeviceContext();
     ctx->OMSetBlendState( m_states->Opaque(), nullptr, 0xFFFFFFFF );
-    ctx->OMSetDepthStencilState( m_states->DepthDefault(), 0 );
+    ctx->OMSetDepthStencilState( m_states->DepthRead(), 0 );
     ctx->RSSetState( m_states->CullCounterClockwise() );
 
     m_lineEffect->SetView(m_view);
@@ -1045,7 +1045,7 @@ void Game::DrawCross()
 {
     auto ctx = m_deviceResources->GetD3DDeviceContext();
     ctx->OMSetBlendState(m_states->Opaque(), nullptr, 0xFFFFFFFF);
-    ctx->OMSetDepthStencilState(m_states->DepthDefault(), 0);
+    ctx->OMSetDepthStencilState(m_states->DepthRead(), 0);
     ctx->RSSetState(m_states->CullCounterClockwise());
 
     m_lineEffect->SetView(m_view);
