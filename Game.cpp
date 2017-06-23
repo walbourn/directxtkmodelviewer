@@ -5,6 +5,10 @@
 #include "pch.h"
 #include "Game.h"
 
+#if !defined(_XBOX_ONE) || !defined(_TITLE)
+#include "FindMedia.h"
+#endif
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -657,20 +661,22 @@ void Game::Render()
 
                 Vector2 modeLen = m_fontConsolas->MeasureString( szMode );
 
+                float spacing = m_fontConsolas->GetLineSpacing();
+
 #if defined(_XBOX_ONE) && defined(_TITLE)
                 RECT rct = Viewport::ComputeTitleSafeArea(size.right, size.bottom);
 
                 m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(float(rct.left), float(rct.top)), m_uiColor);
-                m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(float(rct.left), float(rct.top + 20)), m_uiColor);
-                m_fontConsolas->DrawString(m_spriteBatch.get(), szState, XMFLOAT2(float(rct.left), float(rct.top + 40)), m_uiColor);
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(float(rct.left), float(rct.top + spacing)), m_uiColor);
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szState, XMFLOAT2(float(rct.left), float(rct.top + spacing * 2.f)), m_uiColor);
                 if (m_usingGamepad)
                 {
                     m_fontConsolas->DrawString(m_spriteBatch.get(), szMode, XMFLOAT2(float(rct.right) - modeLen.x, float(rct.bottom) - modeLen.y), m_uiColor);
                 }
 #else
                 m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(0, 10), m_uiColor);
-                m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(0, 10 + 20), m_uiColor);
-                m_fontConsolas->DrawString(m_spriteBatch.get(), szState, XMFLOAT2(0, 10 + 40), m_uiColor);
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(0, 10 + spacing), m_uiColor);
+                m_fontConsolas->DrawString(m_spriteBatch.get(), szState, XMFLOAT2(0, 10 + spacing * 2.f), m_uiColor);
                 if (m_usingGamepad)
                 {
                     m_fontConsolas->DrawString(m_spriteBatch.get(), szMode, XMFLOAT2(size.right - modeLen.x, size.bottom - modeLen.y), m_uiColor);
@@ -800,9 +806,6 @@ void Game::CreateDeviceDependentResources()
 
     m_spriteBatch = std::make_unique<SpriteBatch>(context);
 
-    m_fontConsolas = std::make_unique<SpriteFont>(device, L"consolas.spritefont");
-    m_fontComic = std::make_unique<SpriteFont>(device, L"comic.spritefont");
-
     m_states = std::make_unique<CommonStates>(device);
 
     m_lineEffect = std::make_unique<BasicEffect>(device);
@@ -830,6 +833,22 @@ void Game::CreateDeviceDependentResources()
 void Game::CreateWindowSizeDependentResources()
 {
     auto size = m_deviceResources->GetOutputSize();
+
+    auto device = m_deviceResources->GetD3DDevice();
+
+    wchar_t consolasFont[_MAX_PATH] = {};
+    wchar_t comicFont[_MAX_PATH] = {};
+
+#if defined(_XBOX_ONE) && defined(_TITLE)
+    wcscpy_s(consolasFont, (size.bottom > 1080) ? L"consolas4k.spritefont" : L"consolas.spritefont");
+    wcscpy_s(comicFont, (size.bottom > 1080) ? L"comic4k.spritefont" : L"comic.spritefont");
+#else
+    DX::FindMediaFile(consolasFont, _MAX_PATH, (size.bottom > 1200) ? L"consolas4k.spritefont" : L"consolas.spritefont");
+    DX::FindMediaFile(comicFont, _MAX_PATH, (size.bottom > 1200) ? L"comic4k.spritefont" : L"comic.spritefont");
+#endif
+
+    m_fontConsolas = std::make_unique<SpriteFont>(device, consolasFont);
+    m_fontComic = std::make_unique<SpriteFont>(device, comicFont);
 
     m_hdrScene->SetWindow(size);
 

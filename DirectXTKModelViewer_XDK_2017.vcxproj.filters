@@ -53,6 +53,12 @@
     <None Include="consolas.spritefont">
       <Filter>Assets</Filter>
     </None>
+    <None Include="comic4k.spritefont">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="consolas4k.spritefont">
+      <Filter>Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

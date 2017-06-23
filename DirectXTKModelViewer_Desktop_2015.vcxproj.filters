@@ -19,6 +19,7 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="RenderTexture.h" />
+    <ClInclude Include="FindMedia.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeviceResourcesPC.cpp">
@@ -34,6 +35,12 @@
       <Filter>Assets</Filter>
     </None>
     <None Include="consolas.spritefont">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="comic4k.spritefont">
+      <Filter>Assets</Filter>
+    </None>
+    <None Include="consolas4k.spritefont">
       <Filter>Assets</Filter>
     </None>
   </ItemGroup>

@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="ArcBall.h" />
     <ClInclude Include="DeviceResourcesPC.h" />
+    <ClInclude Include="FindMedia.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RenderTexture.h" />
@@ -194,7 +195,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="comic.spritefont" />
+    <None Include="comic4k.spritefont" />
     <None Include="consolas.spritefont" />
+    <None Include="consolas4k.spritefont" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
