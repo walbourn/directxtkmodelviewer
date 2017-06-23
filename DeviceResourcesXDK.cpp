@@ -10,8 +10,6 @@ using namespace DirectX;
 
 using Microsoft::WRL::ComPtr;
 
-bool DX::DeviceResources::s_render4K = false;
-
 // Constructor for DeviceResources.
 DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT backBufferCount, bool fastSemantics) :
     m_screenViewport{},
@@ -85,26 +83,17 @@ void DX::DeviceResources::CreateDeviceResources()
     DX::ThrowIfFailed(device.As(&m_d3dDevice));
     DX::ThrowIfFailed(context.As(&m_d3dContext));
 
-#if _XDK_VER >= 0x38390868 /* XDK Edition 161000 */
-    if (s_render4K)
+#if _XDK_VER >= 0x3F5B03F5 /* XDK Edition 170600 */
     {
         D3D11X_GPU_HARDWARE_CONFIGURATION hwConfig = {};
         m_d3dDevice->GetGpuHardwareConfiguration(&hwConfig);
-        if (hwConfig.HardwareVersion >= D3D11X_HARDWARE_VERSION_XBOX_ONE_S)
+        if (hwConfig.HardwareVersion >= D3D11X_HARDWARE_VERSION_XBOX_ONE_X)
         {
             m_outputSize = { 0, 0, 3840, 2160 };
-        }
 #ifdef _DEBUG
-        else
-        {
-            OutputDebugStringA("INFO: 4K UHD output requires Xbox One S or later; using 1080p\n");
-        }
+            OutputDebugStringA("INFO: Swapchain using 4k (3840 x 2160)\n");
 #endif
-    }
-#elif defined(_DEBUG)
-    if (s_render4K)
-    {
-        OutputDebugStringA("WARNING: 4K UHD detection not supported prior to October 2016 XDK; using 1080p\n");
+        }
     }
 #endif
 }

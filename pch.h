@@ -86,6 +86,7 @@ namespace DX
 #include <Keyboard.h>
 #include <Model.h>
 #include <Mouse.h>
+#include <PostProcess.h>
 #include <PrimitiveBatch.h>
 #include <SimpleMath.h>
 #include <SpriteBatch.h>

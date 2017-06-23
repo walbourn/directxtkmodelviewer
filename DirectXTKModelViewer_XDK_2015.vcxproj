@@ -21,7 +21,6 @@
     <Keyword>Win32Proj</Keyword>
     <ApplicationEnvironment>title</ApplicationEnvironment>
     <!-- - - - -->
-    <PlatformToolset>v140</PlatformToolset>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <TargetRuntime>Native</TargetRuntime>
   </PropertyGroup>
@@ -159,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="ArcBall.h" />
     <ClInclude Include="DeviceResourcesXDK.h" />
+    <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="pch.h" />
@@ -172,6 +172,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RenderTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />

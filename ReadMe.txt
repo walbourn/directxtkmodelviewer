@@ -4,13 +4,13 @@ Model Viewer for DirectX Tool Kit for DirectX 11
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-April 28, 2017
+June 22, 2017
 
 The DirectX Tool Kit Model Viewer is an interactive test application for
 validating .SDKMESH, .VBO, and .CMO files rendered using the DirectX Tool Kit.
 
-The source is written for Visual Studio 2013, 2015, or 2017. It is recommended that you make
-use of the Windows 8.1 SDK and Windows 7 Service Pack 1 or later.
+The source is written for Visual Studio 2013, 2015, or 2017. It is recommended you use
+VS 2013 Update 5, VS 2015 Update 3, or VS 2017.
 
 All content and source code for this package are subject to the terms of the MIT License.
 <http://opensource.org/licenses/MIT>.
@@ -88,6 +88,7 @@ KEYBOARD:
    H toggles HUD display
    J toggles the cross display
    R toggles wireframe
+   T cycles tone-mapping operator
 
    [/] scales the FOV
    +/- scales the grid size
@@ -109,6 +110,7 @@ GAMEPAD:
     B - Toggles wireframe/culling mode
     X - Cycles grid, viewpoint cross, and HUD display
     Y - Cycle background color
+    Menu - Cycle tone-mapping operator
 
     DPAD
         U – Translate Up
@@ -160,6 +162,10 @@ the system:
 ---------------
 RELEASE HISTORY
 ---------------
+
+June 22, 2017
+    Added tone-mapping
+    Updated for the June 21, 2017 release of DirectX Tool Kit
 
 April 28, 2017
     Added VS 2017 projects

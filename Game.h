@@ -6,6 +6,7 @@
 
 #include "StepTimer.h"
 #include "ArcBall.h"
+#include "RenderTexture.h"
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
 #include "DeviceResourcesXDK.h"
@@ -47,7 +48,7 @@ public:
     void OnSuspending();
     void OnResuming();
     void OnWindowSizeChanged(int width, int height);
-    void OnFileOpen(const WCHAR* filename);
+    void OnFileOpen(const wchar_t* filename);
 
     // Properites
     void GetDefaultSize( int& width, int& height ) const;
@@ -69,6 +70,7 @@ private:
     void CameraHome();
 
     void CycleBackgroundColor();
+    void CycleToneMapOperator();
 
     void CreateProjection();
 
@@ -80,6 +82,7 @@ private:
 
     // Device resources.
     std::unique_ptr<DX::DeviceResources>            m_deviceResources;
+    std::unique_ptr<DX::RenderTexture>              m_hdrScene;
 
     // Rendering loop timer.
     DX::StepTimer                                   m_timer;
@@ -94,6 +97,7 @@ private:
     std::unique_ptr<DirectX::Model>                 m_model;
     std::unique_ptr<DirectX::CommonStates>          m_states;
     std::unique_ptr<DirectX::BasicEffect>           m_lineEffect;
+    std::unique_ptr<DirectX::ToneMapPostProcess>    m_toneMap;
 
     Microsoft::WRL::ComPtr<ID3D11InputLayout>       m_lineLayout;
     std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionColor>>  m_lineBatch;
@@ -137,9 +141,11 @@ private:
     bool                                            m_lhcoords;
     bool                                            m_fpscamera;
 
-    WCHAR                                           m_szModelName[MAX_PATH];
-    WCHAR                                           m_szStatus[ 512 ];
-    WCHAR                                           m_szError[ 512 ];
+    int                                             m_toneMapMode;
+
+    wchar_t                                         m_szModelName[MAX_PATH];
+    wchar_t                                         m_szStatus[ 512 ];
+    wchar_t                                         m_szError[ 512 ];
 
     ArcBall                                         m_ballCamera;
     ArcBall                                         m_ballModel;

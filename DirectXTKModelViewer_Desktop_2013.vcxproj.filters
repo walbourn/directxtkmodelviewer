@@ -18,6 +18,7 @@
     <ClInclude Include="DeviceResourcesPC.h">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="RenderTexture.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -26,6 +27,7 @@
     <ClCompile Include="DeviceResourcesPC.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="RenderTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="comic.spritefont">
