@@ -14,6 +14,8 @@ using namespace Windows::ApplicationModel::Core;
 using namespace Windows::ApplicationModel::Activation;
 using namespace Windows::UI::Core;
 using namespace Windows::Foundation;
+
+bool g_HDRMode = false;
 #else
 #include <commdlg.h>
 #endif
@@ -43,6 +45,25 @@ public:
             ref new EventHandler<Platform::Object^>(this, &ViewProvider::OnResuming);
 
         m_game = std::make_unique<Game>();
+
+#if defined(_XBOX_ONE) && defined(_TITLE)
+        if (m_game->RequestHDRMode())
+        {
+            // Request HDR mode.
+            auto determineHDR = Concurrency::create_task(
+                Windows::Xbox::Graphics::Display::DisplayConfiguration::TrySetHdrModeAsync()
+            );
+
+            // In a real game, you'd do some initialization here to hide the HDR mode switch.
+
+            // Finish up HDR mode detection (waiting for async if needed)
+            g_HDRMode = determineHDR.get()->HdrEnabled;
+
+#ifdef _DEBUG
+            OutputDebugStringA((g_HDRMode) ? "INFO: Display in HDR Mode\n" : "INFO: Display in SDR Mode\n");
+#endif
+        }
+#endif
     }
 
     virtual void Uninitialize()

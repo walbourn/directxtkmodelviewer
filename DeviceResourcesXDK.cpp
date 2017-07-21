@@ -7,63 +7,53 @@
 #include "DeviceResourcesXDK.h"
 
 using namespace DirectX;
+using namespace DX;
 
 using Microsoft::WRL::ComPtr;
 
 // Constructor for DeviceResources.
-DX::DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT backBufferCount, bool fastSemantics) :
+DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT backBufferCount, unsigned int flags) :
     m_screenViewport{},
-    m_backBufferFormat(backBufferFormat),
+    m_backBufferFormat((flags & c_EnableHDR) ? DXGI_FORMAT_R10G10B10A2_UNORM : backBufferFormat),
     m_depthBufferFormat(depthBufferFormat),
     m_backBufferCount(backBufferCount),
     m_window(nullptr),
     m_d3dFeatureLevel(D3D_FEATURE_LEVEL_11_1),
     m_outputSize{0, 0, 1920, 1080},
-    m_fastSemantics(fastSemantics)
+    m_options(flags),
+    m_gameDVRFormat((flags & c_EnableHDR) ? backBufferFormat : DXGI_FORMAT_UNKNOWN)
 {
 }
 
 // Configures the Direct3D device, and stores handles to it and the device context.
-void DX::DeviceResources::CreateDeviceResources() 
+void DeviceResources::CreateDeviceResources()
 {
-    UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    D3D11X_CREATE_DEVICE_PARAMETERS params = {};
+    params.Version = D3D11_SDK_VERSION;
 
 #ifdef _DEBUG
-    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    // Enable the debug layer.
+    params.Flags = D3D11_CREATE_DEVICE_DEBUG;
 #elif defined(PROFILE)
-    creationFlags |= D3D11_CREATE_DEVICE_INSTRUMENTED;
+    // Enable the instrumented driver.
+    params.Flags = D3D11_CREATE_DEVICE_INSTRUMENTED;
 #endif
 
-    if (m_fastSemantics)
+    if (m_options & c_FastSemantics)
     {
-        creationFlags |= D3D11_CREATE_DEVICE_IMMEDIATE_CONTEXT_FAST_SEMANTICS;
+        params.Flags |= D3D11_CREATE_DEVICE_IMMEDIATE_CONTEXT_FAST_SEMANTICS;
     }
 
-    D3D_FEATURE_LEVEL featureLevels[] = 
-    {
-        D3D_FEATURE_LEVEL_11_1,
-    };
-
     // Create the Direct3D 11 API device object and a corresponding context.
-    ComPtr<ID3D11Device> device;
-    ComPtr<ID3D11DeviceContext> context;
-
-    DX::ThrowIfFailed(D3D11CreateDevice(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        0,
-        creationFlags,
-        featureLevels,
-        _countof(featureLevels),
-        D3D11_SDK_VERSION,
-        device.GetAddressOf(),      // Returns the Direct3D device created.
-        &m_d3dFeatureLevel,         // Returns feature level of device created.
-        context.GetAddressOf()      // Returns the device immediate context.
+    ThrowIfFailed(D3D11XCreateDeviceX(
+        &params,
+        m_d3dDevice.ReleaseAndGetAddressOf(),
+        m_d3dContext.ReleaseAndGetAddressOf()
         ));
 
 #ifndef NDEBUG
     ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-    if (SUCCEEDED(device.As(&d3dInfoQueue)))
+    if (SUCCEEDED(m_d3dDevice.As(&d3dInfoQueue)))
     {
 #ifdef _DEBUG
         d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
@@ -80,26 +70,36 @@ void DX::DeviceResources::CreateDeviceResources()
     }
 #endif
 
-    DX::ThrowIfFailed(device.As(&m_d3dDevice));
-    DX::ThrowIfFailed(context.As(&m_d3dContext));
-
-#if _XDK_VER >= 0x3F5B03F5 /* XDK Edition 170600 */
+    if (m_options & c_Enable4K_UHD)
     {
+#if _XDK_VER >= 0x3F6803F3 /* XDK Edition 170600 */
         D3D11X_GPU_HARDWARE_CONFIGURATION hwConfig = {};
         m_d3dDevice->GetGpuHardwareConfiguration(&hwConfig);
         if (hwConfig.HardwareVersion >= D3D11X_HARDWARE_VERSION_XBOX_ONE_X)
         {
             m_outputSize = { 0, 0, 3840, 2160 };
 #ifdef _DEBUG
-            OutputDebugStringA("INFO: Swapchain using 4k (3840 x 2160)\n");
+            OutputDebugStringA("INFO: Swapchain using 4k (3840 x 2160) on Xbox One X\n");
 #endif
         }
-    }
+        else
+        {
+            m_options &= ~c_Enable4K_UHD;
+#ifdef _DEBUG
+            OutputDebugStringA("INFO: Swapchain using 1080p (1920 x 1080) on Xbox One or Xbox One S\n");
 #endif
+        }
+#else
+        m_options &= ~c_Enable4K_UHD;
+#ifdef _DEBUG
+        OutputDebugStringA("WARNING: Hardware detection not supported on this XDK edition; Swapchain using 1080p (1920 x 1080)\n");
+#endif
+#endif
+    }
 }
 
 // These resources need to be recreated every time the window size is changed.
-void DX::DeviceResources::CreateWindowSizeDependentResources() 
+void DeviceResources::CreateWindowSizeDependentResources()
 {
     if (!m_window)
     {
@@ -107,12 +107,14 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
     }
 
     // Clear the previous window size specific context.
-    ID3D11RenderTargetView* nullViews[] = {nullptr};
+    ID3D11RenderTargetView* nullViews[] = {nullptr, nullptr};
     m_d3dContext->OMSetRenderTargets(_countof(nullViews), nullViews, nullptr);
     m_d3dRenderTargetView.Reset();
     m_d3dDepthStencilView.Reset();
     m_renderTarget.Reset();
     m_depthStencil.Reset();
+    m_d3dGameDVRRenderTargetView.Reset();
+    m_d3dGameDVRRenderTarget.Reset();
     m_d3dContext->Flush();
 
     // Determine the render target size in pixels.
@@ -122,7 +124,7 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
     if (m_swapChain)
     {
         // If the swap chain already exists, resize it.
-        DX::ThrowIfFailed(m_swapChain->ResizeBuffers(
+        ThrowIfFailed(m_swapChain->ResizeBuffers(
             m_backBufferCount,
             backBufferWidth,
             backBufferHeight,
@@ -131,6 +133,17 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             ));
 
         // Xbox One apps do not need to handle DXGI_ERROR_DEVICE_REMOVED or DXGI_ERROR_DEVICE_RESET.
+
+        if (m_swapChainGameDVR)
+        {
+            ThrowIfFailed(m_swapChainGameDVR->ResizeBuffers(
+                m_backBufferCount,
+                backBufferWidth,
+                backBufferHeight,
+                m_gameDVRFormat,
+                0
+                ));
+        }
     }
     else
     {
@@ -138,13 +151,13 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 
         // This sequence obtains the DXGI factory that was used to create the Direct3D device above.
         ComPtr<IDXGIDevice1> dxgiDevice;
-        DX::ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
+        ThrowIfFailed(m_d3dDevice.As(&dxgiDevice));
 
         ComPtr<IDXGIAdapter> dxgiAdapter;
-        DX::ThrowIfFailed(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
+        ThrowIfFailed(dxgiDevice->GetAdapter(dxgiAdapter.GetAddressOf()));
 
         ComPtr<IDXGIFactory2> dxgiFactory;
-        DX::ThrowIfFailed(dxgiAdapter->GetParent(IID_GRAPHICS_PPV_ARGS(dxgiFactory.GetAddressOf())));
+        ThrowIfFailed(dxgiAdapter->GetParent(IID_GRAPHICS_PPV_ARGS(dxgiFactory.GetAddressOf())));
 
         DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
         swapChainDesc.Width = backBufferWidth;
@@ -157,26 +170,56 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
         swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
         swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-        swapChainDesc.Flags = DXGIX_SWAP_CHAIN_FLAG_QUANTIZATION_RGB_FULL;
+        swapChainDesc.Flags = (m_options & c_EnableHDR) ? DXGIX_SWAP_CHAIN_FLAG_COLORIMETRY_RGB_BT2020_ST2084 : DXGIX_SWAP_CHAIN_FLAG_QUANTIZATION_RGB_FULL;
 
         // Create a SwapChain from a CoreWindow.
-        DX::ThrowIfFailed(dxgiFactory->CreateSwapChainForCoreWindow(
+        ThrowIfFailed(dxgiFactory->CreateSwapChainForCoreWindow(
             m_d3dDevice.Get(),
             m_window,
             &swapChainDesc,
             nullptr,
             m_swapChain.GetAddressOf()
             ));
+
+        if ((m_options & c_EnableHDR) && !m_swapChainGameDVR)
+        {
+            swapChainDesc.Format = m_gameDVRFormat;
+            swapChainDesc.Flags = DXGIX_SWAP_CHAIN_FLAG_QUANTIZATION_RGB_FULL;
+
+            // Create a SwapChain from a CoreWindow.
+            ThrowIfFailed(dxgiFactory->CreateSwapChainForCoreWindow(
+                m_d3dDevice.Get(),
+                m_window,
+                &swapChainDesc,
+                nullptr,
+                m_swapChainGameDVR.GetAddressOf()
+                ));
+        }
     }
 
     // Create a render target view of the swap chain back buffer.
-    DX::ThrowIfFailed(m_swapChain->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_renderTarget.ReleaseAndGetAddressOf())));
+    ThrowIfFailed(m_swapChain->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_renderTarget.ReleaseAndGetAddressOf())));
 
-    DX::ThrowIfFailed(m_d3dDevice->CreateRenderTargetView(
+    m_renderTarget->SetName(L"Render target");
+
+    ThrowIfFailed(m_d3dDevice->CreateRenderTargetView(
         m_renderTarget.Get(),
         nullptr,
         m_d3dRenderTargetView.ReleaseAndGetAddressOf()
         ));
+
+    if (m_swapChainGameDVR)
+    {
+        ThrowIfFailed(m_swapChainGameDVR->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_d3dGameDVRRenderTarget.ReleaseAndGetAddressOf())));
+
+        m_d3dGameDVRRenderTarget->SetName(L"GameDVR Render target");
+
+        ThrowIfFailed(m_d3dDevice->CreateRenderTargetView(
+            m_d3dGameDVRRenderTarget.Get(),
+            nullptr,
+            m_d3dGameDVRRenderTargetView.ReleaseAndGetAddressOf()
+            ));
+    }
 
     if (m_depthBufferFormat != DXGI_FORMAT_UNKNOWN)
     {
@@ -190,14 +233,14 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
             D3D11_BIND_DEPTH_STENCIL
             );
 
-        DX::ThrowIfFailed(m_d3dDevice->CreateTexture2D(
+        ThrowIfFailed(m_d3dDevice->CreateTexture2D(
             &depthStencilDesc,
             nullptr,
             m_depthStencil.ReleaseAndGetAddressOf()
             ));
 
         CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-        DX::ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(
+        ThrowIfFailed(m_d3dDevice->CreateDepthStencilView(
             m_depthStencil.Get(),
             &depthStencilViewDesc,
             m_d3dDepthStencilView.ReleaseAndGetAddressOf()
@@ -218,33 +261,65 @@ void DX::DeviceResources::CreateWindowSizeDependentResources()
 }
 
 // Prepare the render target for rendering.
-void DX::DeviceResources::Prepare()
+void DeviceResources::Prepare()
 {
-    if (m_fastSemantics)
+    if (m_options & c_FastSemantics)
     {
-        DX::ThrowIfFailed(m_swapChain->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_renderTarget.ReleaseAndGetAddressOf())));
+        ThrowIfFailed(m_swapChain->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_renderTarget.ReleaseAndGetAddressOf())));
 
         m_d3dDevice->PlaceSwapChainView(m_renderTarget.Get(), m_d3dRenderTargetView.Get());
 
         m_d3dContext->InsertWaitOnPresent(0, m_renderTarget.Get());
+
+        if (m_swapChainGameDVR)
+        {
+            DX::ThrowIfFailed(m_swapChainGameDVR->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_d3dGameDVRRenderTarget.ReleaseAndGetAddressOf())));
+
+            m_d3dDevice->PlaceSwapChainView(m_d3dGameDVRRenderTarget.Get(), m_d3dGameDVRRenderTargetView.Get());
+
+            m_d3dContext->InsertWaitOnPresent(0, m_d3dGameDVRRenderTarget.Get());
+        }
     }
 }
 
 // Present the contents of the swap chain to the screen.
-void DX::DeviceResources::Present(UINT decompressFlags)
+void DeviceResources::Present(UINT decompressFlags)
 {
-    if (m_fastSemantics && decompressFlags)
+    if ((m_options & c_FastSemantics) != 0 && decompressFlags != 0)
     {
         m_d3dContext->DecompressResource(
             m_renderTarget.Get(), 0, nullptr,
             m_renderTarget.Get(), 0, nullptr,
             m_backBufferFormat, decompressFlags);
+
+        if (m_d3dGameDVRRenderTarget)
+        {
+            m_d3dContext->DecompressResource(
+                m_d3dGameDVRRenderTarget.Get(), 0, nullptr,
+                m_d3dGameDVRRenderTarget.Get(), 0, nullptr,
+                m_gameDVRFormat, decompressFlags);
+        }
     }
 
-    // The first argument instructs DXGI to block until VSync, putting the application
-    // to sleep until the next VSync. This ensures we don't waste any cycles rendering
-    // frames that will never be displayed to the screen.
-    DX::ThrowIfFailed(m_swapChain->Present(1, 0));
+    if (m_swapChainGameDVR)
+    {
+        IDXGISwapChain1* ppSwapChains[2] = { m_swapChain.Get(), m_swapChainGameDVR.Get() };
+
+        DXGIX_PRESENTARRAY_PARAMETERS presentParameterSets[2] = {};
+        presentParameterSets[0].SourceRect = m_outputSize;
+        presentParameterSets[0].ScaleFactorHorz = 1.0f;
+        presentParameterSets[0].ScaleFactorVert = 1.0f;
+
+        presentParameterSets[1].SourceRect = m_outputSize;
+        presentParameterSets[1].ScaleFactorHorz = 1.0f;
+        presentParameterSets[1].ScaleFactorVert = 1.0f;
+
+        DXGIXPresentArray(1, 0, 0, _countof(presentParameterSets), ppSwapChains, presentParameterSets);
+    }
+    else
+    {
+        ThrowIfFailed(m_swapChain->Present(1, 0));
+    }
 
     // Xbox One apps do not need to handle DXGI_ERROR_DEVICE_REMOVED or DXGI_ERROR_DEVICE_RESET.
 }

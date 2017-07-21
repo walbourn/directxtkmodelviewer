@@ -35,6 +35,15 @@
 #include <windows.h>
 #include <d3d11_1.h>
 
+#if defined(NTDDI_WIN10_RS2)
+#include <dxgi1_6.h>
+#else
+#include <dxgi1_5.h>
+#endif
+
+#ifdef _DEBUG
+#include <dxgidebug.h>
+#endif
 #endif
 
 #include <wrl/client.h>
@@ -61,7 +70,7 @@ namespace DX
         virtual const char* what() const override
         {
             static char s_str[64] = { 0 };
-            sprintf_s(s_str, "Failure with HRESULT of %08X", result);
+            sprintf_s(s_str, "Failure with HRESULT of %08X", static_cast<unsigned int>(result));
             return s_str;
         }
 

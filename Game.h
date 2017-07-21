@@ -52,6 +52,7 @@ public:
 
     // Properites
     void GetDefaultSize( int& width, int& height ) const;
+    bool RequestHDRMode() const { return m_deviceResources ? (m_deviceResources->GetDeviceOptions() & DX::DeviceResources::c_EnableHDR) != 0 : false; }
 
 private:
 
