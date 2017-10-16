@@ -45,9 +45,11 @@ Game::Game() :
     m_firstFile(0)
 {
 #if defined(_XBOX_ONE) && defined(_TITLE)
-    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_D32_FLOAT, 2, DX::DeviceResources::c_EnableHDR);
+    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_D32_FLOAT, 2,
+        DX::DeviceResources::c_EnableHDR);
 #else
-    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_D32_FLOAT, 2, D3D_FEATURE_LEVEL_10_0, DX::DeviceResources::c_EnableHDR);
+    m_deviceResources = std::make_unique<DX::DeviceResources>(DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_D32_FLOAT, 2,
+        D3D_FEATURE_LEVEL_10_0, DX::DeviceResources::c_EnableHDR);
     m_deviceResources->RegisterDeviceNotify(this);
 #endif
 
@@ -813,6 +815,12 @@ void Game::OnResuming()
 }
 
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
+void Game::OnWindowMoved()
+{
+    auto r = m_deviceResources->GetOutputSize();
+    m_deviceResources->WindowSizeChanged(r.right, r.bottom);
+}
+
 void Game::OnWindowSizeChanged(int width, int height)
 {
     if (!m_deviceResources->WindowSizeChanged(width, height))

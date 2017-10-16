@@ -249,8 +249,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_PAINT:
-        hdc = BeginPaint(hWnd, &ps);
-        EndPaint(hWnd, &ps);
+        if (s_in_sizemove && game)
+        {
+            game->Tick();
+        }
+        else
+        {
+            hdc = BeginPaint(hWnd, &ps);
+            EndPaint(hWnd, &ps);
+        }
+        break;
+
+    case WM_MOVE:
+        if (game)
+        {
+            game->OnWindowMoved();
+        }
         break;
 
     case WM_SIZE:

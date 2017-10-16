@@ -47,6 +47,7 @@ public:
     void OnDeactivated();
     void OnSuspending();
     void OnResuming();
+    void OnWindowMoved();
     void OnWindowSizeChanged(int width, int height);
     void OnFileOpen(const wchar_t* filename);
 
