@@ -32,8 +32,8 @@ namespace DX
             throw std::invalid_argument("FindMediaFile");
 
         // Get the exe name, and exe path
-        wchar_t strExePath[MAX_PATH] = { 0 };
-        wchar_t strExeName[MAX_PATH] = { 0 };
+        wchar_t strExePath[MAX_PATH] = {};
+        wchar_t strExeName[MAX_PATH] = {};
         wchar_t* strLastSlash = nullptr;
         GetModuleFileName(nullptr, strExePath, MAX_PATH);
         strExePath[MAX_PATH - 1] = 0;
@@ -56,12 +56,12 @@ namespace DX
             return;
 
         // Search all parent directories starting at .\ and using strFilename as the leaf name
-        wchar_t strLeafName[MAX_PATH] = { 0 };
+        wchar_t strLeafName[MAX_PATH] = {};
         wcscpy_s(strLeafName, MAX_PATH, strFilename);
 
-        wchar_t strFullPath[MAX_PATH] = { 0 };
-        wchar_t strFullFileName[MAX_PATH] = { 0 };
-        wchar_t strSearch[MAX_PATH] = { 0 };
+        wchar_t strFullPath[MAX_PATH] = {};
+        wchar_t strFullFileName[MAX_PATH] = {};
+        wchar_t strSearch[MAX_PATH] = {};
         wchar_t* strFilePart = nullptr;
 
         GetFullPathName(strExePath, MAX_PATH, strFullPath, &strFilePart);

@@ -639,7 +639,7 @@ void Game::Render()
 
                 Vector3 up = Vector3::TransformNormal(Vector3::Up, m_view);
 
-                wchar_t szCamera[256] = { 0 };
+                wchar_t szCamera[256] = {};
                 swprintf_s(szCamera, L"Camera: (%8.4f,%8.4f,%8.4f) Look At: (%8.4f,%8.4f,%8.4f) Up: (%8.4f,%8.4f,%8.4f) FOV: %8.4f",
                     m_lastCameraPos.x, m_lastCameraPos.y, m_lastCameraPos.z,
                     m_cameraFocus.x, m_cameraFocus.y, m_cameraFocus.z,
@@ -679,10 +679,10 @@ void Game::Render()
                 }
 #endif
 
-                wchar_t szState[128] = { 0 };
+                wchar_t szState[128] = {};
                 swprintf_s(szState, L"%ls    Tone-mapping operator: %ls", mode, toneMap);
 
-                wchar_t szMode[64] = { 0 };
+                wchar_t szMode[64] = {};
                 swprintf_s(szMode, L" %ls (Sensitivity: %8.4f)", (m_fpscamera) ? L"  FPS" : L"Orbit", m_sensitivity);
 
                 Vector2 modeLen = m_fontConsolas->MeasureString( szMode );
@@ -967,7 +967,7 @@ void Game::LoadModel()
 
     if (*drive || *path)
     {
-        wchar_t dir[MAX_PATH] = { 0 };
+        wchar_t dir[MAX_PATH] = {};
         _wmakepath_s(dir, drive, path, nullptr, nullptr);
         fx.SetDirectory(dir);
     }
@@ -1261,7 +1261,7 @@ void Game::EnumerateModelFiles()
     m_selectFile = m_firstFile = 0;
     m_fileNames.clear();
 
-    WIN32_FIND_DATA ffdata = { 0 };
+    WIN32_FIND_DATA ffdata = {};
 
     static const wchar_t* exts[] = { L"D:\\*.sdkmesh", L"D:\\*.cmo", L"D:\\*.vbo" };
     
