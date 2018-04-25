@@ -3,12 +3,8 @@
 //
 // Helper for managing offscreen render targets
 //
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
-//
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //-------------------------------------------------------------------------------------
 
 #pragma once
@@ -53,7 +49,7 @@ void RenderTexture::SetDevice(_In_ ID3D11Device* device)
             throw std::exception("CheckFormatSupport");
         }
 
-        UINT32 required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_SHADER_SAMPLE | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+        UINT32 required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
         if ((formatSupport & required) != required)
         {
 #ifdef _DEBUG
@@ -73,7 +69,7 @@ void RenderTexture::SetDevice(_In_ ID3D11Device* device)
 }
 
 
-void RenderTexture::SetSize(size_t width, size_t height)
+void RenderTexture::SizeResources(size_t width, size_t height)
 {
     if (width == m_width && height == m_height)
         return;
@@ -172,5 +168,5 @@ void RenderTexture::SetWindow(const RECT& output)
     size_t width = std::max<size_t>(output.right - output.left, 1);
     size_t height = std::max<size_t>(output.bottom - output.top, 1);
 
-    SetSize(width, height);
+    SizeResources(width, height);
 }

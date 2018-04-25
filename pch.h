@@ -1,7 +1,11 @@
+//--------------------------------------------------------------------------------------
+// File: pch.h
 //
-// pch.h
 // Header for standard system include files.
 //
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+//--------------------------------------------------------------------------------------
 
 #pragma once
 

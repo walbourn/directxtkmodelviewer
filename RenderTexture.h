@@ -3,12 +3,8 @@
 //
 // Helper for managing offscreen render targets
 //
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
-// PARTICULAR PURPOSE.
-//
 // Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 //-------------------------------------------------------------------------------------
 
 #pragma once
@@ -31,7 +27,7 @@ namespace DX
 
         void SetDevice(_In_ ID3D11Device* device);
 
-        void SetSize(size_t width, size_t height);
+        void SizeResources(size_t width, size_t height);
 
         void ReleaseDevice();
 
@@ -41,11 +37,11 @@ namespace DX
 
         void SetWindow(const RECT& rect);
 
-        DXGI_FORMAT GetFormat() const { return m_format; }
-
         ID3D11Texture2D*            GetRenderTarget() const { return m_renderTarget.Get(); }
         ID3D11RenderTargetView*	    GetRenderTargetView() const { return m_renderTargetView.Get(); }
         ID3D11ShaderResourceView*   GetShaderResourceView() const { return m_shaderResourceView.Get(); }
+
+        DXGI_FORMAT GetFormat() const { return m_format; }
 
     private:
         Microsoft::WRL::ComPtr<ID3D11Device>                m_device;

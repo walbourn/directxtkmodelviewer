@@ -1,8 +1,11 @@
-//
-// ArcBall.h
+//--------------------------------------------------------------------------------------
+// File: ArcBall.h
 //
 // Ken Shoemake, "Arcball Rotation Control", Graphics Gems IV, pg 176 - 192  
 //
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+//--------------------------------------------------------------------------------------
 
 #pragma once
 
