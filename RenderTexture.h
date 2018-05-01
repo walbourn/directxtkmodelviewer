@@ -16,10 +16,8 @@ namespace DX
     public:
         RenderTexture(DXGI_FORMAT format);
 
-#if !defined(_MSC_VER) || (_MSC_VER >= 1900)
         RenderTexture(RenderTexture&&) = default;
         RenderTexture& operator= (RenderTexture&&) = default;
-#endif
 
         RenderTexture(RenderTexture const&) = delete;
         RenderTexture& operator= (RenderTexture const&) = delete;
