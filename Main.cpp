@@ -431,12 +431,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             static DWORD s_filterIndex = 1;
 
-            WCHAR szFile[MAX_PATH];
-            szFile[0] = 0;
-
-            OPENFILENAME ofn;
-            ZeroMemory(&ofn, sizeof(OPENFILENAME));
-
+            WCHAR szFile[MAX_PATH] = {};
+            OPENFILENAME ofn = {};
             ofn.lStructSize = sizeof(OPENFILENAME);
             ofn.lpstrFile = szFile;
             ofn.lpstrFile[0] = 0;
