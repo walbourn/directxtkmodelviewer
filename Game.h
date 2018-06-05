@@ -27,7 +27,7 @@ class Game
 {
 public:
 
-    Game();
+    Game() noexcept(false);
 
     // Initialization and management
 #if defined(_XBOX_ONE) && defined(_TITLE)
@@ -54,7 +54,7 @@ public:
     void OnWindowSizeChanged(int width, int height);
     void OnFileOpen(const wchar_t* filename);
 
-    // Properites
+    // Properties
     void GetDefaultSize( int& width, int& height ) const;
     bool RequestHDRMode() const { return m_deviceResources ? (m_deviceResources->GetDeviceOptions() & DX::DeviceResources::c_EnableHDR) != 0 : false; }
 

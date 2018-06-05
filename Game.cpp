@@ -26,7 +26,7 @@ namespace
 }
 
 // Constructor.
-Game::Game() :
+Game::Game() noexcept(false) :
     m_gridScale(10.f),
     m_fov(XM_PI / 4.f),
     m_zoom(1.f),

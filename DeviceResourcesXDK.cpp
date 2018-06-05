@@ -12,16 +12,20 @@ using namespace DX;
 using Microsoft::WRL::ComPtr;
 
 // Constructor for DeviceResources.
-DeviceResources::DeviceResources(DXGI_FORMAT backBufferFormat, DXGI_FORMAT depthBufferFormat, UINT backBufferCount, unsigned int flags) :
-    m_screenViewport{},
-    m_backBufferFormat((flags & c_EnableHDR) ? DXGI_FORMAT_R10G10B10A2_UNORM : backBufferFormat),
-    m_depthBufferFormat(depthBufferFormat),
-    m_backBufferCount(backBufferCount),
-    m_window(nullptr),
-    m_d3dFeatureLevel(D3D_FEATURE_LEVEL_11_1),
-    m_outputSize{0, 0, 1920, 1080},
-    m_options(flags),
-    m_gameDVRFormat((flags & c_EnableHDR) ? backBufferFormat : DXGI_FORMAT_UNKNOWN)
+DeviceResources::DeviceResources(
+    DXGI_FORMAT backBufferFormat,
+    DXGI_FORMAT depthBufferFormat,
+    UINT backBufferCount,
+    unsigned int flags) noexcept :
+        m_screenViewport{},
+        m_backBufferFormat((flags & c_EnableHDR) ? DXGI_FORMAT_R10G10B10A2_UNORM : backBufferFormat),
+        m_depthBufferFormat(depthBufferFormat),
+        m_backBufferCount(backBufferCount),
+        m_window(nullptr),
+        m_d3dFeatureLevel(D3D_FEATURE_LEVEL_11_1),
+        m_outputSize{0, 0, 1920, 1080},
+        m_options(flags),
+        m_gameDVRFormat((flags & c_EnableHDR) ? backBufferFormat : DXGI_FORMAT_UNKNOWN)
 {
 }
 
@@ -273,7 +277,7 @@ void DeviceResources::Prepare()
 
         if (m_swapChainGameDVR)
         {
-            DX::ThrowIfFailed(m_swapChainGameDVR->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_d3dGameDVRRenderTarget.ReleaseAndGetAddressOf())));
+            ThrowIfFailed(m_swapChainGameDVR->GetBuffer(0, IID_GRAPHICS_PPV_ARGS(m_d3dGameDVRRenderTarget.ReleaseAndGetAddressOf())));
 
             m_d3dDevice->PlaceSwapChainView(m_d3dGameDVRRenderTarget.Get(), m_d3dGameDVRRenderTargetView.Get());
 
@@ -310,9 +314,7 @@ void DeviceResources::Present(UINT decompressFlags)
         presentParameterSets[0].ScaleFactorHorz = 1.0f;
         presentParameterSets[0].ScaleFactorVert = 1.0f;
 
-        presentParameterSets[1].SourceRect = m_outputSize;
-        presentParameterSets[1].ScaleFactorHorz = 1.0f;
-        presentParameterSets[1].ScaleFactorVert = 1.0f;
+        presentParameterSets[1] = presentParameterSets[0];
 
         DXGIXPresentArray(1, 0, 0, _countof(presentParameterSets), ppSwapChains, presentParameterSets);
     }
