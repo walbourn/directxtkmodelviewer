@@ -4,7 +4,7 @@ Model Viewer for DirectX Tool Kit for DirectX 11
 
 Copyright (c) Microsoft Corporation. All rights reserved.
 
-May 31, 2018
+August 20, 2018
 
 The DirectX Tool Kit Model Viewer is an interactive test application for
 validating .SDKMESH, .VBO, and .CMO files rendered using the DirectX Tool Kit.
@@ -160,9 +160,27 @@ the system:
     xbcp /x/title <source directory> xd:\
 
 
+-------------
+RELEASE NOTES
+-------------
+
+* The VS 2017 projects make use of /permissive- for improved C++ standard conformance. Use of a Windows 10 SDK prior to
+  the Fall Creators Update (16299) or an Xbox One XDK prior to June 2017 QFE 4 may result in failures due to problems
+  with the system headers. You can work around these by disabling this switch in the project files which is found
+  in the <ConformanceMode> elements.
+
+* The VS 2017 projects require the 15.5 update or later. For Win32 classic desktop projects with the 15.5
+  or 15.6 updates, you need to install the standalone Windows 10 SDK (17134) which is otherwise included in
+  the 15.7/15.8 update. Older VS 2017 updates will fail to load the projects due to use of the <ConformanceMode> element.
+
+
 --------------- 
 RELEASE HISTORY
 ---------------
+
+August 20, 2018
+    Updated for August 17, 2018 release of DirectX Tool Kit
+    Cleanup project files
 
 May 31, 2018
     Updated for May 31, 2018 release of DirectX Tool Kit
