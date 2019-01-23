@@ -108,7 +108,7 @@
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -132,7 +132,7 @@
       <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -151,13 +151,14 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ArcBall.h" />
     <ClInclude Include="DeviceResourcesXDK.h" />
+    <ClInclude Include="ReadData.h" />
     <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="Game.h" />
@@ -178,10 +179,16 @@
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Atrium_diffuseIBL.dds" />
+    <Image Include="Atrium_specularIBL.dds" />
+    <Image Include="Garage_diffuseIBL.dds" />
+    <Image Include="Garage_specularIBL.dds" />
     <Image Include="Logo.png" />
     <Image Include="SmallLogo.png" />
     <Image Include="SplashScreen.png" />
     <Image Include="StoreLogo.png" />
+    <Image Include="SunSubMixer_diffuseIBL.dds" />
+    <Image Include="SunSubMixer_specularIBL.dds" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="DirectXTK\DirectXTK_XboxOneXDK_2015.vcxproj">

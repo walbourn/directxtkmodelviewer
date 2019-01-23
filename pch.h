@@ -93,6 +93,7 @@ namespace DX
 }
 
 #include <CommonStates.h>
+#include <DDSTextureLoader.h>
 #include <Effects.h>
 #include <GamePad.h>
 #include <GraphicsMemory.h>

@@ -97,6 +97,8 @@ KEYBOARD:
 
    O loads model          
 
+   Enter/Backspace cycles Image-Based Lighting for PBR models
+
    Home key resets camera to default position
 
    End key resets model to default rotation

@@ -7,18 +7,28 @@
     <Filter Include="Common">
       <UniqueIdentifier>{d2282975-c364-4a2d-b04c-1c5c313e5a7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{2530b866-7733-460b-9b13-ecb00224e1e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StepTimer.h">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ArcBall.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="DeviceResourcesXDK.h">
       <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="RenderTexture.h" />
+    <ClInclude Include="ArcBall.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderTexture.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="ReadData.h">
+      <Filter>Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -27,7 +37,9 @@
     <ClCompile Include="DeviceResourcesXDK.cpp">
       <Filter>Common</Filter>
     </ClCompile>
-    <ClCompile Include="RenderTexture.cpp" />
+    <ClCompile Include="RenderTexture.cpp">
+      <Filter>Utilities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
@@ -43,6 +55,24 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="SplashScreen.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Atrium_diffuseIBL.dds">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Atrium_specularIBL.dds">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Garage_diffuseIBL.dds">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Garage_specularIBL.dds">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="SunSubMixer_diffuseIBL.dds">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="SunSubMixer_specularIBL.dds">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>

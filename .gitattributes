@@ -17,3 +17,5 @@
 
 # Explicitly declare resource files as binary
 *.pdb binary
+*.dds binary
+*.spritefont binary

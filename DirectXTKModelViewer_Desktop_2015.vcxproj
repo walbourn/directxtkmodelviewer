@@ -94,7 +94,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
@@ -110,7 +110,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
@@ -128,7 +128,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)DirectXTK\Inc;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>DirectXTK\Inc;DirectXTK\Src;</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
@@ -165,6 +165,7 @@
     <ClInclude Include="FindMedia.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ReadData.h" />
     <ClInclude Include="RenderTexture.h" />
     <ClInclude Include="StepTimer.h" />
   </ItemGroup>
@@ -184,7 +185,13 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Atrium_diffuseIBL.dds" />
+    <Image Include="Atrium_specularIBL.dds" />
     <Image Include="directx.ico" />
+    <Image Include="Garage_diffuseIBL.dds" />
+    <Image Include="Garage_specularIBL.dds" />
+    <Image Include="SunSubMixer_diffuseIBL.dds" />
+    <Image Include="SunSubMixer_specularIBL.dds" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="settings.manifest" />

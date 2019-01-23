@@ -13,6 +13,8 @@ extern bool g_HDRMode;
 #else
 #include "FindMedia.h"
 #endif
+#include "ReadData.h"
+#include "SDKMesh.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -34,6 +36,7 @@ Game::Game() noexcept(false) :
     m_farPlane(10000.f),
     m_sensitivity(1.f),
     m_gridDivs(20),
+    m_ibl(0),
     m_showHud(true),
     m_showCross(true),
     m_showGrid(false),
@@ -297,6 +300,8 @@ void Game::Update(DX::StepTimer const& timer)
             {
                 m_cameraRot = m_modelRot = Quaternion::Identity;
             }
+
+            // TODO - m_ibl
         }
     }
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
@@ -411,6 +416,22 @@ void Game::Update(DX::StepTimer const& timer)
         if (m_keyboardTracker.pressed.O)
         {
             PostMessage(m_deviceResources->GetWindowHandle(), WM_USER, 0, 0);
+        }
+
+        if (m_keyboardTracker.IsKeyPressed(Keyboard::Enter) && !kb.LeftAlt && !kb.RightAlt)
+        {
+            ++m_ibl;
+            if (m_ibl >= s_nIBL)
+            {
+                m_ibl = 0;
+            }
+        }
+        else if (m_keyboardTracker.IsKeyPressed(Keyboard::Back))
+        {
+            if (!m_ibl)
+                m_ibl = s_nIBL - 1;
+            else
+                --m_ibl;
         }
 
         // Mouse controls
@@ -569,6 +590,20 @@ void Game::Render()
         else
         {
             auto context = m_deviceResources->GetD3DDeviceContext();
+
+
+            //--- Set PBR lighting sources ---
+            D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+            m_radianceIBL[m_ibl]->GetDesc(&desc);
+
+            m_model->UpdateEffects([&](IEffect* effect)
+            {
+                auto pbr = dynamic_cast<PBREffect*>(effect);
+                if (pbr)
+                {
+                    pbr->SetIBLTextures(m_radianceIBL[m_ibl].Get(), desc.TextureCube.MipLevels, m_irradianceIBL[m_ibl].Get());
+                }
+            });
 
 #if 0
             m_model->Draw(context, *, m_world, m_view, m_proj, m_wireframe);
@@ -889,6 +924,43 @@ void Game::CreateDeviceDependentResources()
     m_lineBatch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(context);
 
     m_world = Matrix::Identity;
+
+    static const wchar_t* s_radianceIBL[s_nIBL] =
+    {
+        L"Atrium_diffuseIBL.dds",
+        L"Garage_diffuseIBL.dds",
+        L"SunSubMixer_diffuseIBL.dds",
+    };
+    static const wchar_t* s_irradianceIBL[s_nIBL] =
+    {
+        L"Atrium_specularIBL.dds",
+        L"Garage_specularIBL.dds",
+        L"SunSubMixer_specularIBL.dds",
+    };
+
+    static_assert(_countof(s_radianceIBL) == _countof(s_irradianceIBL), "IBL array mismatch");
+
+    for (size_t j = 0; j < s_nIBL; ++j)
+    {
+        wchar_t radiance[_MAX_PATH] = {};
+        wchar_t irradiance[_MAX_PATH] = {};
+
+#if defined(_XBOX_ONE) && defined(_TITLE)
+        wcscpy_s(radiance, s_radianceIBL[j]);
+        wcscpy_s(irradiance, s_irradianceIBL[j]);
+#else
+        DX::FindMediaFile(radiance, _MAX_PATH, s_radianceIBL[j]);
+        DX::FindMediaFile(irradiance, _MAX_PATH, s_irradianceIBL[j]);
+#endif
+
+        DX::ThrowIfFailed(
+            CreateDDSTextureFromFile(device, radiance, nullptr, m_radianceIBL[j].ReleaseAndGetAddressOf())
+        );
+
+        DX::ThrowIfFailed(
+            CreateDDSTextureFromFile(device, irradiance, nullptr, m_irradianceIBL[j].ReleaseAndGetAddressOf())
+        );
+    }
 }
 
 // Allocate all memory resources that change on a window SizeChanged event.
@@ -926,7 +998,11 @@ void Game::OnDeviceLost()
     m_spriteBatch.reset();
     m_fontConsolas.reset();
     m_fontComic.reset();
+
     m_model.reset();
+    m_fxFactory.reset();
+    m_pbrFXFactory.reset();
+
     m_states.reset();
     m_lineEffect.reset();
     m_lineBatch.reset();
@@ -935,6 +1011,12 @@ void Game::OnDeviceLost()
     m_lineLayout.Reset();
 
     m_hdrScene->ReleaseDevice();
+
+    for (size_t j = 0; j < s_nIBL; ++j)
+    {
+        m_radianceIBL[j].Reset();
+        m_irradianceIBL[j].Reset();
+    }
 }
 
 void Game::OnDeviceRestored()
@@ -948,6 +1030,9 @@ void Game::OnDeviceRestored()
 void Game::LoadModel()
 {
     m_model.reset();
+    m_fxFactory.reset();
+    m_pbrFXFactory.reset();
+
     *m_szStatus = 0;
     *m_szError = 0;
     m_reloadModel = false;
@@ -956,51 +1041,101 @@ void Game::LoadModel()
     if (!*m_szModelName)
         return;
 
-    wchar_t drive[ _MAX_DRIVE ];
-    wchar_t path[ MAX_PATH ];
-    wchar_t ext[ _MAX_EXT ];
-    wchar_t fname[ _MAX_FNAME ];
-    _wsplitpath_s( m_szModelName, drive, _MAX_DRIVE, path, MAX_PATH, fname, _MAX_FNAME, ext, _MAX_EXT );
+    wchar_t drive[_MAX_DRIVE] = {};
+    wchar_t path[MAX_PATH] = {};
+    wchar_t ext[_MAX_EXT] = {};
+    wchar_t fname[_MAX_FNAME] = {};
+    _wsplitpath_s(m_szModelName, drive, _MAX_DRIVE, path, MAX_PATH, fname, _MAX_FNAME, ext, _MAX_EXT);
 
     auto device = m_deviceResources->GetD3DDevice();
 
-    EffectFactory fx(device);
-
-    fx.EnableForceSRGB(true);
-
-    if (*drive || *path)
-    {
-        wchar_t dir[MAX_PATH] = {};
-        _wmakepath_s(dir, drive, path, nullptr, nullptr);
-        fx.SetDirectory(dir);
-    }
-
+    bool issdkmesh2 = false;
+    std::vector<uint8_t> modelBin;
     try
     {
+        modelBin = DX::ReadData(m_szModelName);
+
         if (_wcsicmp(ext, L".sdkmesh") == 0)
         {
-            m_model = Model::CreateFromSDKMESH(device, m_szModelName, fx, m_lhcoords);
+            if (modelBin.size() >= sizeof(DXUT::SDKMESH_HEADER))
+            {
+                auto hdr = reinterpret_cast<const DXUT::SDKMESH_HEADER*>(modelBin.data());
+                if (hdr->Version >= 200)
+                {
+                    issdkmesh2 = true;
+                }
+            }
         }
-        else if (_wcsicmp(ext, L".cmo") == 0)
+    }
+    catch (...)
+    {
+        swprintf_s(m_szError, L"Error loading model %ls%ls\n", fname, ext);
+    }
+
+    if (!modelBin.empty())
+    {
+        IEffectFactory *fxFactory = nullptr;
+
+        if (issdkmesh2)
         {
-            m_model = Model::CreateFromCMO(device, m_szModelName, fx, !m_lhcoords);
-        }
-        else if (_wcsicmp(ext, L".vbo") == 0)
-        {
-            m_model = Model::CreateFromVBO(device, m_szModelName, nullptr, m_lhcoords);
+            m_pbrFXFactory = std::make_unique<PBREffectFactory>(device);
+
+            fxFactory = m_pbrFXFactory.get();
         }
         else
         {
-            swprintf_s(m_szError, L"Unknown file type %ls", ext);
+            m_fxFactory = std::make_unique<EffectFactory>(device);
+
+            m_fxFactory->EnableForceSRGB(true);
+
+            fxFactory = m_fxFactory.get();
+        }
+
+        if (*drive || *path)
+        {
+            wchar_t dir[MAX_PATH] = {};
+            _wmakepath_s(dir, drive, path, nullptr, nullptr);
+            if (m_fxFactory)
+            {
+                m_fxFactory->SetDirectory(dir);
+            }
+            if (m_pbrFXFactory)
+            {
+                m_pbrFXFactory->SetDirectory(dir);
+            }
+        }
+
+        try
+        {
+            if (_wcsicmp(ext, L".sdkmesh") == 0)
+            {
+                m_model = Model::CreateFromSDKMESH(device, modelBin.data(), modelBin.size(), *fxFactory, m_lhcoords);
+            }
+            else if (_wcsicmp(ext, L".cmo") == 0)
+            {
+                m_model = Model::CreateFromCMO(device, modelBin.data(), modelBin.size(), *fxFactory, !m_lhcoords);
+            }
+            else if (_wcsicmp(ext, L".vbo") == 0)
+            {
+                m_model = Model::CreateFromVBO(device, modelBin.data(), modelBin.size(), nullptr, m_lhcoords);
+            }
+            else
+            {
+                swprintf_s(m_szError, L"Unknown file type %ls", ext);
+                m_model.reset();
+                *m_szStatus = 0;
+            }
+        }
+        catch (...)
+        {
+            swprintf_s(m_szError, L"Error loading model %ls%ls\n", fname, ext);
             m_model.reset();
+            m_fxFactory.reset();
+            m_pbrFXFactory.reset();
             *m_szStatus = 0;
         }
-    }
-    catch(...)
-    {
-        swprintf_s(m_szError, L"Error loading model %ls%ls\n", fname, ext);
-        m_model.reset();
-        *m_szStatus = 0;
+
+        modelBin.clear();
     }
 
     m_wireframe = false;
