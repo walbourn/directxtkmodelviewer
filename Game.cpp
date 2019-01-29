@@ -46,7 +46,7 @@ Game::Game() noexcept(false) :
     m_reloadModel(false),
     m_lhcoords(true),
     m_fpscamera(false),
-    m_toneMapMode(ToneMapPostProcess::Saturate),
+    m_toneMapMode(ToneMapPostProcess::Reinhard),
     m_selectFile(0),
     m_firstFile(0)
 {
