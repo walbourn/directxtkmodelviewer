@@ -181,35 +181,31 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     // Register class and create window
     {
         // Register class
-        WNDCLASSEX wcex;
-        wcex.cbSize = sizeof(WNDCLASSEX);
+        WNDCLASSEXW wcex;
+        wcex.cbSize = sizeof(WNDCLASSEXW);
         wcex.style = CS_HREDRAW | CS_VREDRAW;
         wcex.lpfnWndProc = WndProc;
         wcex.cbClsExtra = 0;
         wcex.cbWndExtra = 0;
         wcex.hInstance = hInstance;
-        wcex.hIcon = LoadIcon(hInstance, L"IDI_ICON");
-        wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+        wcex.hIcon = LoadIconW(hInstance, L"IDI_ICON");
+        wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
         wcex.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
         wcex.lpszMenuName = nullptr;
         wcex.lpszClassName = L"DirectXTKModelViewerWindowClass";
-        wcex.hIconSm = LoadIcon(wcex.hInstance, L"IDI_ICON");
-        if (!RegisterClassEx(&wcex))
+        wcex.hIconSm = LoadIconW(wcex.hInstance, L"IDI_ICON");
+        if (!RegisterClassExW(&wcex))
             return 1;
 
         // Create window
         int w, h;
         g_game->GetDefaultSize(w, h);
 
-        RECT rc;
-        rc.top = 0;
-        rc.left = 0;
-        rc.right = static_cast<LONG>(w); 
-        rc.bottom = static_cast<LONG>(h);
+        RECT rc = { 0, 0, static_cast<LONG>(w), static_cast<LONG>(h) };
 
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 
-        HWND hwnd = CreateWindow(L"DirectXTKModelViewerWindowClass", L"DirectXTKModelViewer (DirectX 11)", WS_OVERLAPPEDWINDOW,
+        HWND hwnd = CreateWindowW(L"DirectXTKModelViewerWindowClass", L"DirectXTKModelViewer (DirectX 11)", WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
             nullptr);
         if (!hwnd)
