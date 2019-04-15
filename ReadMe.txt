@@ -63,11 +63,11 @@ USAGE
 ***PC***
 
 If a Xbox 360 or Xbox One gamepad controller is plugged into the PC it can be used to
-control the viewer (see below for details). If you press the "View" button, a Open File
+control the viewer (see below for details). If you press the "View" button, an Open File
 Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
 
 If no controller is plugged in, you can use keyboard & mouse controls. If you press the "O" key,
-a Open File Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
+an Open File Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
 
 MOUSE:
 
@@ -105,7 +105,7 @@ KEYBOARD:
 
 ***Xbox One***
 
-For Xbox One, only the gamepad controls are available. When you presse the "View" button, the tool enumerates
+For Xbox One, only the gamepad controls are available. When you press the "View" button, the tool enumerates
 the .SDKMESH, .CMO, and .VBO files in the root of the D:\ drive and allows you to select one of them to load.
 
 GAMEPAD:
@@ -117,45 +117,45 @@ GAMEPAD:
     Menu - Cycle tone-mapping operator
 
     DPAD
-        U – Translate Up
-        D – Translate Down
-        R – Translate Right
-        L – Translate Left
+        U - Translate Up
+        D - Translate Down
+        R - Translate Right
+        L - Translate Left
 
     Right Trigger - Increment FOV
-    Left Trigger – Decrement FOV
+    Left Trigger - Decrement FOV
 
-    Right Bumper – Increment translate sensitivity
-    Left Bumper – Decrement translate sensitivity
+    Right Bumper - Increment translate sensitivity
+    Left Bumper - Decrement translate sensitivity
 
     Left Thumbstick button - Frame scene extents
 
     Orbit
         Right Thumbstick
-              R – Orbit Right
-              L – Orbit Left
-              U – Orbit Up
-              D – Orbit Down
-              Click – Reset View to Default
+              R - Orbit Right
+              L - Orbit Left
+              U - Orbit Up
+              D - Orbit Down
+              Click - Reset View to Default
 
         Left Thumbstick
-              R – Rotate (Roll) Right
-              L – Rotate (Roll) Left
-              U – Move towards view point
-              D – Move away from view point
+              R - Rotate (Roll) Right
+              L - Rotate (Roll) Left
+              U - Move towards view point
+              D - Move away from view point
 
     FPS
         Right Thumbstick
-              R – Rotate Right
-              L – Rotate Left
-              U – Rotate Up
-              D – Rotate Down
+              R - Rotate Right
+              L - Rotate Left
+              U - Rotate Up
+              D - Rotate Down
 
         Left Thumbstick
-              R – Translate Right
-              L – Translate Left
-              U – Translate Forward
-              D – Translate Back
+              R - Translate Right
+              L - Translate Left
+              U - Translate Forward
+              D - Translate Back
 
 NOTE: For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
 the system:
