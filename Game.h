@@ -22,7 +22,7 @@
 // provides a game loop
 class Game
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
-    : public DX::IDeviceNotify
+    final : public DX::IDeviceNotify
 #endif
 {
 public:
