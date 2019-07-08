@@ -24,6 +24,9 @@ using namespace DX;
 using Microsoft::WRL::ComPtr;
 
 RenderTexture::RenderTexture(DXGI_FORMAT format) :
+#if defined(_XBOX_ONE) && defined(_TITLE)
+    m_fastSemantics(false),
+#endif
     m_format(format),
     m_width(0),
     m_height(0)
