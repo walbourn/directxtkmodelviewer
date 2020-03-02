@@ -19,53 +19,48 @@ please visit the project site on [GitHub](http://aka.ms/directxtkmodelviewer).
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-
 ## Build Instructions
-------------------
 
 ### PC
 
 Run VS 2017
 
-Open Project/Solution... "DirectXTKModelViewer_Desktop_201?.sln"
+Open Project/Solution... ``DirectXTKModelViewer_Desktop_201?.sln``
 
-Ensure "DirectXTKModelViewer_Desktop_201?" is the "StartUp Project"
+Ensure ``DirectXTKModelViewer_Desktop_201?`` is the "StartUp Project"
 
 Build and Run (F5)
-
 
 ### Xbox One
 
 Run VS 2017
 
-Open Project/Solution... "DirectXTKModelViewer_XDK_201?.sln"
+Open Project/Solution... ``DirectXTKModelViewer_XDK_201?.sln``
 
-Ensure "DirectXTKModelViewer_XDK_201?" is the "StartUp Project"
+Ensure ``DirectXTKModelViewer_XDK_201?`` is the "StartUp Project"
 
 Build and Run (F5) or use Deploy Solution
 
 > On supported platforms, you can use the -render4K command-line option.
 
-## USAGE
+## Usage
 
 ### PC
 
-If a Xbox 360 or Xbox One gamepad controller is plugged into the PC it can be used to
-control the viewer (see below for details). If you press the "View" button, an Open File
+If a Xbox 360 or Xbox One gamepad controller is plugged into the PC it can be used to control the viewer (see below for details). If you press the "View" button, an Open File
 Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
 
-If no controller is plugged in, you can use keyboard & mouse controls. If you press the "O" key,
-an Open File Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
+If no controller is plugged in, you can use keyboard & mouse controls. If you press the "O" key, an Open File Dialog is used to select the model (.SDKMESH, .CMO, or .VBO) to load.
 
-MOUSE:
+#### Mouse
 
-   Press and hold LEFT mouse button to rotate view (SHIFT+LEFT button rotates object instead)
+* Press and hold LEFT mouse button to rotate view (SHIFT+LEFT button rotates object instead)
 
-   Press and hold RIGHT mouse button to translate view in XY (SHIFT+RIGHT translates in Z)
+* Press and hold RIGHT mouse button to translate view in XY (SHIFT+RIGHT translates in Z)
 
-   Scroll wheel controls zoom (i.e. distance between camera and focus point)
+* Scroll wheel controls zoom (i.e. distance between camera and focus point)
 
-KEYBOARD:
+#### Keyboard
 
     W/S and PageUp/PageDown translates in Z
     A/D and Left/Right translates in X
@@ -93,10 +88,9 @@ KEYBOARD:
 
 ### Xbox One
 
-For Xbox One, only the gamepad controls are available. When you press the "View" button, the tool enumerates
-the .SDKMESH, .CMO, and .VBO files in the root of the D:\ drive and allows you to select one of them to load.
+For Xbox One, only the gamepad controls are available. When you press the "View" button, the tool enumerates the .SDKMESH, .CMO, and .VBO files in the root of the D:\ drive and allows you to select one of them to load.
 
-GAMEPAD:
+#### GamePad
 
     A - Change modes Orbit vs. FPS
     B - Toggles wireframe/culling mode
@@ -145,7 +139,7 @@ GAMEPAD:
               U - Translate Forward
               D - Translate Back
 
-> For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
+For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
 the system:
 
 ```
