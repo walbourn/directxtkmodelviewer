@@ -1109,15 +1109,15 @@ void Game::LoadModel()
         {
             if (_wcsicmp(ext, L".sdkmesh") == 0)
             {
-                m_model = Model::CreateFromSDKMESH(device, modelBin.data(), modelBin.size(), *fxFactory, m_lhcoords);
+                m_model = Model::CreateFromSDKMESH(device, modelBin.data(), modelBin.size(), *fxFactory, m_lhcoords ? ModelLoader_CounterClockwise : ModelLoader_Clockwise);
             }
             else if (_wcsicmp(ext, L".cmo") == 0)
             {
-                m_model = Model::CreateFromCMO(device, modelBin.data(), modelBin.size(), *fxFactory, !m_lhcoords);
+                m_model = Model::CreateFromCMO(device, modelBin.data(), modelBin.size(), *fxFactory, m_lhcoords ? ModelLoader_Clockwise : ModelLoader_CounterClockwise);
             }
             else if (_wcsicmp(ext, L".vbo") == 0)
             {
-                m_model = Model::CreateFromVBO(device, modelBin.data(), modelBin.size(), nullptr, m_lhcoords);
+                m_model = Model::CreateFromVBO(device, modelBin.data(), modelBin.size(), nullptr, m_lhcoords ? ModelLoader_CounterClockwise : ModelLoader_Clockwise);
             }
             else
             {
