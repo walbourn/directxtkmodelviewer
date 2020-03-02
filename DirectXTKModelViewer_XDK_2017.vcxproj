@@ -230,13 +230,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">true</ExcludedFromBuild>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt">
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">false</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">false</DeploymentContent>
-      <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">false</DeploymentContent>
-    </Text>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
