@@ -18,36 +18,43 @@ namespace DX
                         DXGI_FORMAT depthBufferFormat = DXGI_FORMAT_D32_FLOAT,
                         UINT backBufferCount = 2,
                         unsigned int flags = 0) noexcept;
+        ~DeviceResources() = default;
+
+        DeviceResources(DeviceResources&&) = default;
+        DeviceResources& operator= (DeviceResources&&) = default;
+
+        DeviceResources(DeviceResources const&) = delete;
+        DeviceResources& operator= (DeviceResources const&) = delete;
 
         void CreateDeviceResources();
         void CreateWindowSizeDependentResources();
-        void SetWindow(IUnknown* window) { m_window = window; }
+        void SetWindow(IUnknown* window) noexcept { m_window = window; }
         void Prepare();
         void Present(UINT decompressFlags = D3D11X_DECOMPRESS_PROPAGATE_COLOR_CLEAR);
 
         // Device Accessors.
-        RECT GetOutputSize() const { return m_outputSize; }
+        RECT GetOutputSize() const noexcept { return m_outputSize; }
 
         // Direct3D Accessors.
-        ID3D11DeviceX*          GetD3DDevice() const                    { return m_d3dDevice.Get(); }
-        ID3D11DeviceContextX*   GetD3DDeviceContext() const             { return m_d3dContext.Get(); }
-        IDXGISwapChain1*        GetSwapChain() const                    { return m_swapChain.Get(); }
-        D3D_FEATURE_LEVEL       GetDeviceFeatureLevel() const           { return m_d3dFeatureLevel; }
-        ID3D11Texture2D*        GetRenderTarget() const                 { return m_renderTarget.Get(); }
-        ID3D11Texture2D*        GetDepthStencil() const                 { return m_depthStencil.Get(); }
-        ID3D11RenderTargetView*	GetRenderTargetView() const             { return m_d3dRenderTargetView.Get(); }
-        ID3D11DepthStencilView* GetDepthStencilView() const             { return m_d3dDepthStencilView.Get(); }
-        DXGI_FORMAT             GetBackBufferFormat() const             { return m_backBufferFormat; }
-        DXGI_FORMAT             GetDepthBufferFormat() const            { return m_depthBufferFormat; }
-        D3D11_VIEWPORT          GetScreenViewport() const               { return m_screenViewport; }
-        UINT                    GetBackBufferCount() const              { return m_backBufferCount; }
-        unsigned int            GetDeviceOptions() const                { return m_options; }
+        ID3D11DeviceX*          GetD3DDevice() const noexcept           { return m_d3dDevice.Get(); }
+        ID3D11DeviceContextX*   GetD3DDeviceContext() const noexcept    { return m_d3dContext.Get(); }
+        IDXGISwapChain1*        GetSwapChain() const noexcept           { return m_swapChain.Get(); }
+        D3D_FEATURE_LEVEL       GetDeviceFeatureLevel() const noexcept  { return m_d3dFeatureLevel; }
+        ID3D11Texture2D*        GetRenderTarget() const noexcept        { return m_renderTarget.Get(); }
+        ID3D11Texture2D*        GetDepthStencil() const noexcept        { return m_depthStencil.Get(); }
+        ID3D11RenderTargetView*	GetRenderTargetView() const noexcept    { return m_d3dRenderTargetView.Get(); }
+        ID3D11DepthStencilView* GetDepthStencilView() const noexcept    { return m_d3dDepthStencilView.Get(); }
+        DXGI_FORMAT             GetBackBufferFormat() const noexcept    { return m_backBufferFormat; }
+        DXGI_FORMAT             GetDepthBufferFormat() const noexcept   { return m_depthBufferFormat; }
+        D3D11_VIEWPORT          GetScreenViewport() const noexcept      { return m_screenViewport; }
+        UINT                    GetBackBufferCount() const noexcept     { return m_backBufferCount; }
+        unsigned int            GetDeviceOptions() const noexcept       { return m_options; }
 
         // Direct3D HDR Game DVR support for Xbox One.
-        IDXGISwapChain1*        GetGameDVRSwapChain() const             { return m_swapChainGameDVR.Get(); }
-        ID3D11Texture2D*        GetGameDVRRenderTarget() const          { return m_d3dGameDVRRenderTarget.Get(); }
-        ID3D11RenderTargetView*	GetGameDVRRenderTargetView() const      { return m_d3dGameDVRRenderTargetView.Get(); }
-        DXGI_FORMAT             GetGameDVRFormat() const                { return m_gameDVRFormat; }
+        IDXGISwapChain1*        GetGameDVRSwapChain() const noexcept        { return m_swapChainGameDVR.Get(); }
+        ID3D11Texture2D*        GetGameDVRRenderTarget() const noexcept     { return m_d3dGameDVRRenderTarget.Get(); }
+        ID3D11RenderTargetView*	GetGameDVRRenderTargetView() const noexcept { return m_d3dGameDVRRenderTargetView.Get(); }
+        DXGI_FORMAT             GetGameDVRFormat() const noexcept           { return m_gameDVRFormat; }
 
     private:
         // Direct3D objects.

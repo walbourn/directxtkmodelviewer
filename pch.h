@@ -19,9 +19,9 @@
 
 #else
 
-#include <WinSDKVer.h>
-#define _WIN32_WINNT 0x0600
-#include <SDKDDKVer.h>
+#include <winsdkver.h>
+#define _WIN32_WINNT 0x0601
+#include <sdkddkver.h>
 
 // DirectX apps don't need GDI
 #define NODRAWTEXT
@@ -36,7 +36,7 @@
 #define NOHELP
 
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <Windows.h>
 #include <d3d11_1.h>
 
 #if defined(NTDDI_WIN10_RS2)
@@ -69,7 +69,7 @@ namespace DX
     class com_exception : public std::exception
     {
     public:
-        com_exception(HRESULT hr) : result(hr) {}
+        com_exception(HRESULT hr) noexcept : result(hr) {}
 
         const char* what() const override
         {

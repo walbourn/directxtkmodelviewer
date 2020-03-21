@@ -28,6 +28,13 @@ class Game
 public:
 
     Game() noexcept(false);
+    ~Game() = default;
+
+    Game(Game&&) = default;
+    Game& operator= (Game&&) = default;
+
+    Game(Game const&) = delete;
+    Game& operator= (Game const&) = delete;
 
     // Initialization and management
 #if defined(_XBOX_ONE) && defined(_TITLE)
@@ -41,8 +48,8 @@ public:
 
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
     // IDeviceNotify
-    virtual void OnDeviceLost() override;
-    virtual void OnDeviceRestored() override;
+    void OnDeviceLost() override;
+    void OnDeviceRestored() override;
 #endif
 
     // Messages
@@ -55,8 +62,8 @@ public:
     void OnFileOpen(const wchar_t* filename);
 
     // Properties
-    void GetDefaultSize( int& width, int& height ) const;
-    bool RequestHDRMode() const { return m_deviceResources ? (m_deviceResources->GetDeviceOptions() & DX::DeviceResources::c_EnableHDR) != 0 : false; }
+    void GetDefaultSize( int& width, int& height ) const noexcept;
+    bool RequestHDRMode() const noexcept { return m_deviceResources ? (m_deviceResources->GetDeviceOptions() & DX::DeviceResources::c_EnableHDR) != 0 : false; }
 
 private:
 

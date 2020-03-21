@@ -16,6 +16,8 @@ extern bool g_HDRMode;
 #include "ReadData.h"
 #include "SDKMesh.h"
 
+extern void ExitGame() noexcept;
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -249,7 +251,7 @@ void Game::Update(DX::StepTimer const& timer)
 #if defined(_XBOX_ONE) && defined(_TITLE)
                 EnumerateModelFiles();
 #else
-                PostMessage(m_deviceResources->GetWindowHandle(), WM_USER, 0, 0);
+                PostMessage(m_deviceResources->GetWindow(), WM_USER, 0, 0);
 #endif
             }
 
@@ -415,7 +417,7 @@ void Game::Update(DX::StepTimer const& timer)
 
         if (m_keyboardTracker.pressed.O)
         {
-            PostMessage(m_deviceResources->GetWindowHandle(), WM_USER, 0, 0);
+            PostMessage(m_deviceResources->GetWindow(), WM_USER, 0, 0);
         }
 
         if (m_keyboardTracker.IsKeyPressed(Keyboard::Enter) && !kb.LeftAlt && !kb.RightAlt)
@@ -878,7 +880,7 @@ void Game::OnFileOpen(const wchar_t* filename)
 }
 
 // Properties
-void Game::GetDefaultSize(int& width, int& height) const
+void Game::GetDefaultSize(int& width, int& height) const noexcept
 {
     width = 1280;
     height = 720;
