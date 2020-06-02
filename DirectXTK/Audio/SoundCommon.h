@@ -13,6 +13,17 @@
 #include "Audio.h"
 #include "PlatformHelpers.h"
 
+#ifdef USING_XAUDIO2_9
+#define DIRECTX_ENABLE_XWMA
+#endif
+
+#if defined(_XBOX_ONE) && defined(_TITLE)
+#define DIRECTX_ENABLE_XMA2
+#endif
+
+#if defined(DIRECTX_ENABLE_XWMA) || defined(DIRECTX_ENABLE_XMA2)
+#define DIRECTX_ENABLE_SEEK_TABLES
+#endif
 
 namespace DirectX
 {
@@ -55,10 +66,10 @@ namespace DirectX
     void CreateIntegerPCM(_Out_ WAVEFORMATEX* wfx, int sampleRate, int channels, int sampleBits) noexcept;
     void CreateFloatPCM(_Out_ WAVEFORMATEX* wfx, int sampleRate, int channels) noexcept;
     void CreateADPCM(_Out_writes_bytes_(wfxSize) WAVEFORMATEX* wfx, size_t wfxSize, int sampleRate, int channels, int samplesPerBlock) noexcept(false);
-#if defined(USING_XAUDIO2_7_DIRECTX) || defined(USING_XAUDIO2_9)
+#ifdef DIRECTX_ENABLE_XWMA
     void CreateXWMA(_Out_ WAVEFORMATEX* wfx, int sampleRate, int channels, int blockAlign, int avgBytes, bool wma3) noexcept;
 #endif
-#if defined(_XBOX_ONE) && defined(_TITLE)
+#ifdef DIRECTX_ENABLE_XMA2
     void CreateXMA2(_Out_writes_bytes_(wfxSize) WAVEFORMATEX* wfx, size_t wfxSize, int sampleRate, int channels, int bytesPerBlock, int blockCount, int samplesEncoded) noexcept(false);
 #endif
 
@@ -84,6 +95,12 @@ namespace DirectX
         {
         }
 
+        SoundEffectInstanceBase(SoundEffectInstanceBase&&) = default;
+        SoundEffectInstanceBase& operator= (SoundEffectInstanceBase&&) = default;
+
+        SoundEffectInstanceBase(SoundEffectInstanceBase const&) = delete;
+        SoundEffectInstanceBase& operator= (SoundEffectInstanceBase const&) = delete;
+
         ~SoundEffectInstanceBase()
         {
             assert(voice == nullptr);
@@ -99,7 +116,7 @@ namespace DirectX
             if (eng->GetChannelMask() & SPEAKER_LOW_FREQUENCY)
                 mFlags = flags | SoundEffectInstance_UseRedirectLFE;
             else
-                mFlags = static_cast<SOUND_EFFECT_INSTANCE_FLAGS>(static_cast<unsigned int>(flags) & ~static_cast<unsigned int>(SoundEffectInstance_UseRedirectLFE));
+                mFlags = flags & ~SoundEffectInstance_UseRedirectLFE;
 
             memset(&mDSPSettings, 0, sizeof(X3DAUDIO_DSP_SETTINGS));
             assert(wfx != nullptr);
@@ -116,7 +133,7 @@ namespace DirectX
             engine->AllocateVoice(wfx, mFlags, false, &voice);
         }
 
-        void DestroyVoice()
+        void DestroyVoice() noexcept
         {
             if (voice)
             {
@@ -254,11 +271,7 @@ namespace DirectX
             if (autostop && voice && (state == PLAYING))
             {
                 XAUDIO2_VOICE_STATE xstate;
-            #if defined(USING_XAUDIO2_8) || defined(USING_XAUDIO2_9)
                 voice->GetState(&xstate, XAUDIO2_VOICE_NOSAMPLESPLAYED);
-            #else // USING_XAUDIO2_7_DIRECTX
-                voice->GetState(&xstate);
-            #endif
 
                 if (!xstate.BuffersQueued)
                 {
@@ -277,11 +290,7 @@ namespace DirectX
                 return 0;
 
             XAUDIO2_VOICE_STATE xstate;
-        #if defined(USING_XAUDIO2_8) || defined(USING_XAUDIO2_9)
             voice->GetState(&xstate, XAUDIO2_VOICE_NOSAMPLESPLAYED);
-        #else // USING_XAUDIO2_7_DIRECTX
-            voice->GetState(&xstate);
-        #endif
             return static_cast<int>(xstate.BuffersQueued);
         }
 
@@ -306,7 +315,7 @@ namespace DirectX
             if (engine->GetChannelMask() & SPEAKER_LOW_FREQUENCY)
                 mFlags = mFlags | SoundEffectInstance_UseRedirectLFE;
             else
-                mFlags = static_cast<SOUND_EFFECT_INSTANCE_FLAGS>(static_cast<unsigned int>(mFlags) & ~static_cast<unsigned int>(SoundEffectInstance_UseRedirectLFE));
+                mFlags = mFlags & ~SoundEffectInstance_UseRedirectLFE;
 
             mDSPSettings.DstChannelCount = engine->GetOutputChannels();
         }
@@ -363,5 +372,12 @@ namespace DirectX
         IXAudio2Voice*              mDirectVoice;
         IXAudio2Voice*              mReverbVoice;
         X3DAUDIO_DSP_SETTINGS       mDSPSettings;
+    };
+
+    struct WaveBankSeekData
+    {
+        uint32_t        seekCount;
+        const uint32_t* seekTable;
+        uint32_t        tag;
     };
 }

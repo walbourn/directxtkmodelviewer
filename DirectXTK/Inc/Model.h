@@ -19,13 +19,12 @@
 #include <DirectXMath.h>
 #include <DirectXCollision.h>
 
+#include <cstdint>
 #include <memory>
 #include <functional>
 #include <set>
 #include <string>
 #include <vector>
-
-#include <stdint.h>
 
 #include <wrl\client.h>
 
@@ -48,14 +47,19 @@ namespace DirectX
         ModelLoader_AllowLargeModels    = 0x8,
     };
 
-    inline ModelLoaderFlags operator|(ModelLoaderFlags a, ModelLoaderFlags b) noexcept { return static_cast<ModelLoaderFlags>(static_cast<int>(a) | static_cast<int>(b)); }
-
     //----------------------------------------------------------------------------------
     // Each mesh part is a submesh with a single effect
     class ModelMeshPart
     {
     public:
         ModelMeshPart() noexcept;
+
+        ModelMeshPart(ModelMeshPart&&) = default;
+        ModelMeshPart& operator= (ModelMeshPart&&) = default;
+
+        ModelMeshPart(ModelMeshPart const&) = default;
+        ModelMeshPart& operator= (ModelMeshPart const&) = default;
+
         virtual ~ModelMeshPart();
 
         uint32_t                                                indexCount;
@@ -102,6 +106,13 @@ namespace DirectX
     {
     public:
         ModelMesh() noexcept;
+
+        ModelMesh(ModelMesh&&) = default;
+        ModelMesh& operator= (ModelMesh&&) = default;
+
+        ModelMesh(ModelMesh const&) = default;
+        ModelMesh& operator= (ModelMesh const&) = default;
+
         virtual ~ModelMesh();
 
         BoundingSphere              boundingSphere;
@@ -130,6 +141,14 @@ namespace DirectX
     class Model
     {
     public:
+        Model() = default;
+
+        Model(Model&&) = default;
+        Model& operator= (Model&&) = default;
+
+        Model(Model const&) = default;
+        Model& operator= (Model const&) = default;
+
         virtual ~Model();
 
         ModelMesh::Collection   meshes;
@@ -188,4 +207,15 @@ namespace DirectX
     private:
         std::set<IEffect*>  mEffectCache;
     };
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+#endif
+
+    DEFINE_ENUM_FLAG_OPERATORS(ModelLoaderFlags);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 }
