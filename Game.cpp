@@ -447,11 +447,11 @@ void Game::Update(DX::StepTimer const& timer)
             Vector3 delta;
             if (kb.LeftShift || kb.RightShift)
             {
-                delta = Vector3(0.f, 0.f, -float(mouse.y) * handed) * m_distance * elapsedTime;
+                delta = Vector3(0.f, 0.f, -float(mouse.y) * handed) * m_distance;
             }
             else
             {
-                delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance * elapsedTime;
+                delta = Vector3(-float(mouse.x), float(mouse.y), 0.f) * m_distance;
             }
 
             delta = Vector3::TransformNormal(delta, im);
