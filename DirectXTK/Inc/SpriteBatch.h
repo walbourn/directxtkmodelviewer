@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: SpriteBatch.h
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -13,13 +13,15 @@
 #include <d3d11_x.h>
 #else
 #include <d3d11_1.h>
-#include <dxgi.h>
+#include <dxgi1_2.h>
 #endif
+
+#include <cstdint>
+#include <functional>
+#include <memory>
 
 #include <DirectXMath.h>
 #include <DirectXColors.h>
-#include <functional>
-#include <memory>
 
 
 namespace DirectX
@@ -47,8 +49,9 @@ namespace DirectX
     {
     public:
         explicit SpriteBatch(_In_ ID3D11DeviceContext* deviceContext);
-        SpriteBatch(SpriteBatch&& moveFrom) noexcept;
-        SpriteBatch& operator= (SpriteBatch&& moveFrom) noexcept;
+
+        SpriteBatch(SpriteBatch&&) noexcept;
+        SpriteBatch& operator= (SpriteBatch&&) noexcept;
 
         SpriteBatch(SpriteBatch const&) = delete;
         SpriteBatch& operator= (SpriteBatch const&) = delete;
@@ -88,7 +91,7 @@ namespace DirectX
 
     private:
         // Private implementation.
-        class Impl;
+        struct Impl;
 
         std::unique_ptr<Impl> pImpl;
 

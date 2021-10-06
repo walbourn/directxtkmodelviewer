@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248926
@@ -59,6 +59,23 @@ struct VSInputNmTxVc
     float3 Normal   : NORMAL;
     float2 TexCoord : TEXCOORD0;
     float4 Color    : COLOR;
+};
+
+struct VSInputNmTxInst
+{
+    float4 Position    : SV_Position;
+    float3 Normal      : NORMAL;
+    float2 TexCoord    : TEXCOORD0;
+    float4x3 Transform : InstMatrix;
+};
+
+struct VSInputNmTxVcInst
+{
+    float4 Position    : SV_Position;
+    float3 Normal      : NORMAL;
+    float2 TexCoord    : TEXCOORD0;
+    float4 Color       : COLOR;
+    float4x3 Transform : InstMatrix;
 };
 
 struct VSInputTx2

@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: GamePad.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -100,7 +100,7 @@ public:
     {
         if (s_gamePad)
         {
-            throw std::exception("GamePad is a singleton");
+            throw std::logic_error("GamePad is a singleton");
         }
 
         s_gamePad = this;
@@ -419,7 +419,7 @@ public:
 
         if (s_gamePad)
         {
-            throw std::exception("GamePad is a singleton");
+            throw std::logic_error("GamePad is a singleton");
         }
 
         s_gamePad = this;
@@ -427,7 +427,7 @@ public:
         mChanged.reset(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
         if (!mChanged)
         {
-            throw std::exception("CreateEventEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
         }
 
         ThrowIfFailed(GetActivationFactory(HStringReference(RuntimeClass_Windows_Gaming_Input_Gamepad).Get(), mStatics.GetAddressOf()));
@@ -902,7 +902,7 @@ public:
 
         if (s_gamePad)
         {
-            throw std::exception("GamePad is a singleton");
+            throw std::logic_error("GamePad is a singleton");
         }
 
         s_gamePad = this;
@@ -910,7 +910,7 @@ public:
         mChanged.reset(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
         if (!mChanged)
         {
-            throw std::exception("CreateEventEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
         }
 
         ThrowIfFailed(GetActivationFactory(HStringReference(RuntimeClass_Windows_Xbox_Input_Gamepad).Get(), mStatics.GetAddressOf()));
@@ -1203,7 +1203,7 @@ private:
                 {
                     if (empty >= MAX_PLAYER_COUNT)
                     {
-                        throw std::exception("Too many gamepads found");
+                        throw std::runtime_error("Too many gamepads found");
                     }
 
                     mGamePad[empty] = pad;
@@ -1257,7 +1257,7 @@ public:
 
         if (s_gamePad)
         {
-            throw std::exception("GamePad is a singleton");
+            throw std::logic_error("GamePad is a singleton");
         }
 
         s_gamePad = this;
@@ -1606,9 +1606,7 @@ GamePad& GamePad::operator= (GamePad&& moveFrom) noexcept
 
 
 // Public destructor.
-GamePad::~GamePad()
-{
-}
+GamePad::~GamePad() = default;
 
 
 GamePad::State GamePad::GetState(int player, DeadZone deadZoneMode)
@@ -1651,6 +1649,7 @@ void GamePad::RegisterEvents(HANDLE ctrlChanged) noexcept
     pImpl->mCtrlChanged = (!ctrlChanged) ? INVALID_HANDLE_VALUE : ctrlChanged;
 }
 
+_Success_(return != false)
 bool GamePad::GetDevice(int player, _Outptr_ IGameInputDevice** device) noexcept
 {
     return pImpl->GetDevice(player, device);
@@ -1667,7 +1666,7 @@ void GamePad::RegisterEvents(HANDLE ctrlChanged, HANDLE userChanged) noexcept
 GamePad& GamePad::Get()
 {
     if (!Impl::s_gamePad || !Impl::s_gamePad->mOwner)
-        throw std::exception("GamePad is a singleton");
+        throw std::logic_error("GamePad singleton not created");
 
     return *Impl::s_gamePad->mOwner;
 }

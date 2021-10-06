@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: ModelLoadCMO.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -9,7 +9,6 @@
 
 #include "pch.h"
 #include "Model.h"
-#include "DDSTextureLoader.h"
 #include "DirectXHelpers.h"
 #include "Effects.h"
 #include "VertexTypes.h"
@@ -21,9 +20,11 @@ using Microsoft::WRL::ComPtr;
 
 
 //--------------------------------------------------------------------------------------
-// .CMO files are built by Visual Studio 2012 and an example renderer is provided
-// in the VS Direct3D Starter Kit
-// http://code.msdn.microsoft.com/Visual-Studio-3D-Starter-455a15f1
+// .CMO files are built by Visual Studio's MeshContentTask and an example renderer was
+// provided in the VS Direct3D Starter Kit
+// https://devblogs.microsoft.com/cppblog/developing-an-app-with-the-visual-studio-3d-starter-kit-part-1-of-3/
+// https://devblogs.microsoft.com/cppblog/developing-an-app-with-the-visual-studio-3d-starter-kit-part-2-of-3/
+// https://devblogs.microsoft.com/cppblog/developing-an-app-with-the-visual-studio-3d-starter-kit-part-3-of-3/
 //--------------------------------------------------------------------------------------
 
 namespace VSD3DStarter
@@ -99,24 +100,24 @@ namespace VSD3DStarter
         DirectX::XMFLOAT4X4 UVTransform;
     };
 
-    const uint32_t MAX_TEXTURE = 8;
+    constexpr uint32_t MAX_TEXTURE = 8;
 
     struct SubMesh
     {
-        UINT MaterialIndex;
-        UINT IndexBufferIndex;
-        UINT VertexBufferIndex;
-        UINT StartIndex;
-        UINT PrimCount;
+        uint32_t MaterialIndex;
+        uint32_t IndexBufferIndex;
+        uint32_t VertexBufferIndex;
+        uint32_t StartIndex;
+        uint32_t PrimCount;
     };
 
-    const uint32_t NUM_BONE_INFLUENCES = 4;
+    constexpr uint32_t NUM_BONE_INFLUENCES = 4;
 
     static_assert(sizeof(VertexPositionNormalTangentColorTexture) == 52, "mismatch with CMO vertex type");
 
     struct SkinningVertex
     {
-        UINT boneIndex[NUM_BONE_INFLUENCES];
+        uint32_t boneIndex[NUM_BONE_INFLUENCES];
         float boneWeight[NUM_BONE_INFLUENCES];
     };
 
@@ -131,7 +132,7 @@ namespace VSD3DStarter
 
     struct Bone
     {
-        INT ParentIndex;
+        int32_t ParentIndex;
         DirectX::XMFLOAT4X4 InvBindPos;
         DirectX::XMFLOAT4X4 BindPos;
         DirectX::XMFLOAT4X4 LocalTransform;
@@ -141,12 +142,12 @@ namespace VSD3DStarter
     {
         float StartTime;
         float EndTime;
-        UINT  keys;
+        uint32_t keys;
     };
 
     struct Keyframe
     {
-        UINT BoneIndex;
+        uint32_t BoneIndex;
         float Time;
         DirectX::XMFLOAT4X4 Transform;
     };
@@ -216,8 +217,8 @@ namespace
 
     // Shared VB input element description
     INIT_ONCE g_InitOnce = INIT_ONCE_STATIC_INIT;
-    std::shared_ptr<std::vector<D3D11_INPUT_ELEMENT_DESC>> g_vbdecl;
-    std::shared_ptr<std::vector<D3D11_INPUT_ELEMENT_DESC>> g_vbdeclSkinning;
+    std::shared_ptr<ModelMeshPart::InputLayoutCollection> g_vbdecl;
+    std::shared_ptr<ModelMeshPart::InputLayoutCollection> g_vbdeclSkinning;
 
     BOOL CALLBACK InitializeDecl(PINIT_ONCE initOnce, PVOID Parameter, PVOID *lpContext)
     {
@@ -225,11 +226,11 @@ namespace
         UNREFERENCED_PARAMETER(Parameter);
         UNREFERENCED_PARAMETER(lpContext);
 
-        g_vbdecl = std::make_shared<std::vector<D3D11_INPUT_ELEMENT_DESC>>(
+        g_vbdecl = std::make_shared<ModelMeshPart::InputLayoutCollection>(
             VertexPositionNormalTangentColorTexture::InputElements,
             VertexPositionNormalTangentColorTexture::InputElements + VertexPositionNormalTangentColorTexture::InputElementCount);
 
-        g_vbdeclSkinning = std::make_shared<std::vector<D3D11_INPUT_ELEMENT_DESC>>(
+        g_vbdeclSkinning = std::make_shared<ModelMeshPart::InputLayoutCollection>(
             VertexPositionNormalTangentColorTextureSkinning::InputElements,
             VertexPositionNormalTangentColorTextureSkinning::InputElements + VertexPositionNormalTangentColorTextureSkinning::InputElementCount);
         return TRUE;
@@ -263,40 +264,46 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
     ID3D11Device* device,
     const uint8_t* meshData, size_t dataSize,
     IEffectFactory& fxFactory,
-    ModelLoaderFlags flags)
+    ModelLoaderFlags flags,
+    size_t* animsOffset)
 {
+    if (animsOffset)
+    {
+        *animsOffset = 0;
+    }
+
     if (!InitOnceExecuteOnce(&g_InitOnce, InitializeDecl, nullptr, nullptr))
-        throw std::exception("One-time initialization failed");
+        throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "InitOnceExecuteOnce");
 
     if (!device || !meshData)
-        throw std::exception("Device and meshData cannot be null");
+        throw std::invalid_argument("Device and meshData cannot be null");
 
     auto fxFactoryDGSL = dynamic_cast<DGSLEffectFactory*>(&fxFactory);
 
     // Meshes
-    auto nMesh = reinterpret_cast<const UINT*>(meshData);
-    size_t usedSize = sizeof(UINT);
+    auto nMesh = reinterpret_cast<const uint32_t*>(meshData);
+    size_t usedSize = sizeof(uint32_t);
     if (dataSize < usedSize)
-        throw std::exception("End of file");
+        throw std::runtime_error("End of file");
 
     if (!*nMesh)
-        throw std::exception("No meshes found");
+        throw std::runtime_error("No meshes found");
 
     auto model = std::make_unique<Model>();
 
-    for (UINT meshIndex = 0; meshIndex < *nMesh; ++meshIndex)
+    for (size_t meshIndex = 0; meshIndex < *nMesh; ++meshIndex)
     {
         // Mesh name
-        auto nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nName = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         auto meshName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
 
         usedSize += sizeof(wchar_t)*(*nName);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         auto mesh = std::make_shared<ModelMesh>();
         mesh->name.assign(meshName, *nName);
@@ -304,28 +311,28 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         mesh->pmalpha = (flags & ModelLoader_PremultipledAlpha) != 0;
 
         // Materials
-        auto nMats = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nMats = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         std::vector<MaterialRecordCMO> materials;
         materials.reserve(*nMats);
-        for (UINT j = 0; j < *nMats; ++j)
+        for (size_t j = 0; j < *nMats; ++j)
         {
             MaterialRecordCMO m;
 
             // Material name
-            nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
+            nName = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+            usedSize += sizeof(uint32_t);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             auto matName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
 
             usedSize += sizeof(wchar_t)*(*nName);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             m.name.assign(matName, *nName);
 
@@ -333,36 +340,36 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
             auto matSetting = reinterpret_cast<const VSD3DStarter::Material*>(meshData + usedSize);
             usedSize += sizeof(VSD3DStarter::Material);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             m.pMaterial = matSetting;
 
             // Pixel shader name
-            nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
+            nName = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+            usedSize += sizeof(uint32_t);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             auto psName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
 
             usedSize += sizeof(wchar_t)*(*nName);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             m.pixelShader.assign(psName, *nName);
 
-            for (UINT t = 0; t < VSD3DStarter::MAX_TEXTURE; ++t)
+            for (size_t t = 0; t < VSD3DStarter::MAX_TEXTURE; ++t)
             {
-                nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-                usedSize += sizeof(UINT);
+                nName = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+                usedSize += sizeof(uint32_t);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
                 auto txtName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
 
                 usedSize += sizeof(wchar_t)*(*nName);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
                 m.texture[t].assign(txtName, *nName);
             }
@@ -382,38 +389,38 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         }
 
         // Skeletal data?
-        const BYTE* bSkeleton = meshData + usedSize;
-        usedSize += sizeof(BYTE);
+        const uint8_t* bSkeleton = meshData + usedSize;
+        usedSize += sizeof(uint8_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         // Submeshes
-        auto nSubmesh = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nSubmesh = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         if (!*nSubmesh)
-            throw std::exception("No submeshes found\n");
+            throw std::runtime_error("No submeshes found\n");
 
         auto subMesh = reinterpret_cast<const VSD3DStarter::SubMesh*>(meshData + usedSize);
         usedSize += sizeof(VSD3DStarter::SubMesh) * (*nSubmesh);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         // Index buffers
-        auto nIBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nIBs = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         if (!*nIBs)
-            throw std::exception("No index buffers found\n");
+            throw std::runtime_error("No index buffers found\n");
 
         struct IBData
         {
             size_t          nIndices;
-            const USHORT*   ptr;
+            const uint16_t* ptr;
         };
 
         std::vector<IBData> ibData;
@@ -422,33 +429,33 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         std::vector<ComPtr<ID3D11Buffer>> ibs;
         ibs.resize(*nIBs);
 
-        for (UINT j = 0; j < *nIBs; ++j)
+        for (size_t j = 0; j < *nIBs; ++j)
         {
-            auto nIndexes = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
+            auto nIndexes = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+            usedSize += sizeof(uint32_t);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             if (!*nIndexes)
-                throw std::exception("Empty index buffer found\n");
+                throw std::runtime_error("Empty index buffer found\n");
 
-            uint64_t sizeInBytes = uint64_t(*(nIndexes)) * sizeof(USHORT);
+            const uint64_t sizeInBytes = uint64_t(*(nIndexes)) * sizeof(uint16_t);
 
             if (sizeInBytes > UINT32_MAX)
-                throw std::exception("IB too large");
+                throw std::runtime_error("IB too large");
 
             if (!(flags & ModelLoader_AllowLargeModels))
             {
                 if (sizeInBytes > (D3D11_REQ_RESOURCE_SIZE_IN_MEGABYTES_EXPRESSION_A_TERM * 1024u * 1024u))
-                    throw std::exception("IB too large for DirectX 11");
+                    throw std::runtime_error("IB too large for DirectX 11");
             }
 
             auto ibBytes = static_cast<size_t>(sizeInBytes);
 
-            auto indexes = reinterpret_cast<const USHORT*>(meshData + usedSize);
+            auto indexes = reinterpret_cast<const uint16_t*>(meshData + usedSize);
             usedSize += ibBytes;
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             IBData ib;
             ib.nIndices = *nIndexes;
@@ -473,13 +480,13 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         assert(ibs.size() == *nIBs);
 
         // Vertex buffers
-        auto nVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nVBs = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         if (!*nVBs)
-            throw std::exception("No vertex buffers found\n");
+            throw std::runtime_error("No vertex buffers found\n");
 
         struct VBData
         {
@@ -490,22 +497,22 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
 
         std::vector<VBData> vbData;
         vbData.reserve(*nVBs);
-        for (UINT j = 0; j < *nVBs; ++j)
+        for (size_t j = 0; j < *nVBs; ++j)
         {
-            auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
+            auto nVerts = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+            usedSize += sizeof(uint32_t);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             if (!*nVerts)
-                throw std::exception("Empty vertex buffer found\n");
+                throw std::runtime_error("Empty vertex buffer found\n");
 
-            size_t vbBytes = sizeof(VertexPositionNormalTangentColorTexture) * (*(nVerts));
+            const size_t vbBytes = sizeof(VertexPositionNormalTangentColorTexture) * (*(nVerts));
 
             auto verts = reinterpret_cast<const VertexPositionNormalTangentColorTexture*>(meshData + usedSize);
             usedSize += vbBytes;
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             VBData vb;
             vb.nVerts = *nVerts;
@@ -517,35 +524,35 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         assert(vbData.size() == *nVBs);
 
         // Skinning vertex buffers
-        auto nSkinVBs = reinterpret_cast<const UINT*>(meshData + usedSize);
-        usedSize += sizeof(UINT);
+        auto nSkinVBs = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+        usedSize += sizeof(uint32_t);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         if (*nSkinVBs)
         {
             if (*nSkinVBs != *nVBs)
-                throw std::exception("Number of VBs not equal to number of skin VBs");
+                throw std::runtime_error("Number of VBs not equal to number of skin VBs");
 
-            for (UINT j = 0; j < *nSkinVBs; ++j)
+            for (size_t j = 0; j < *nSkinVBs; ++j)
             {
-                auto nVerts = reinterpret_cast<const UINT*>(meshData + usedSize);
-                usedSize += sizeof(UINT);
+                auto nVerts = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+                usedSize += sizeof(uint32_t);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
                 if (!*nVerts)
-                    throw std::exception("Empty skinning vertex buffer found\n");
+                    throw std::runtime_error("Empty skinning vertex buffer found\n");
 
                 if (vbData[j].nVerts != *nVerts)
-                    throw std::exception("Mismatched number of verts for skin VBs");
+                    throw std::runtime_error("Mismatched number of verts for skin VBs");
 
-                size_t vbBytes = sizeof(VSD3DStarter::SkinningVertex) * (*(nVerts));
+                const size_t vbBytes = sizeof(VSD3DStarter::SkinningVertex) * (*(nVerts));
 
                 auto verts = reinterpret_cast<const VSD3DStarter::SkinningVertex*>(meshData + usedSize);
                 usedSize += vbBytes;
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
                 vbData[j].skinPtr = verts;
             }
@@ -555,7 +562,7 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         auto extents = reinterpret_cast<const VSD3DStarter::MeshExtents*>(meshData + usedSize);
         usedSize += sizeof(VSD3DStarter::MeshExtents);
         if (dataSize < usedSize)
-            throw std::exception("End of file");
+            throw std::runtime_error("End of file");
 
         mesh->boundingSphere.Center.x = extents->CenterX;
         mesh->boundingSphere.Center.y = extents->CenterY;
@@ -566,89 +573,138 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         XMVECTOR max = XMVectorSet(extents->MaxX, extents->MaxY, extents->MaxZ, 0.f);
         BoundingBox::CreateFromPoints(mesh->boundingBox, min, max);
 
-    #if 0
-            // Animation data
-        if (*bSkeleton)
+        // Load model bones (if present and requested)
+        if (*bSkeleton && (flags & ModelLoader_IncludeBones))
         {
             // Bones
-            auto nBones = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
+            auto nBones = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+            usedSize += sizeof(uint32_t);
             if (dataSize < usedSize)
-                throw std::exception("End of file");
+                throw std::runtime_error("End of file");
 
             if (!*nBones)
-                throw std::exception("Animation bone data is missing\n");
+                throw std::runtime_error("Animation bone data is missing\n");
 
-            for (UINT j = 0; j < *nBones; ++j)
+            ModelBone::Collection bones;
+            bones.resize(*nBones);
+            auto transforms = ModelBone::MakeArray(*nBones);
+            auto invTransforms = ModelBone::MakeArray(*nBones);
+
+            for (uint32_t j = 0; j < *nBones; ++j)
             {
                 // Bone name
-                nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-                usedSize += sizeof(UINT);
+                nName = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+                usedSize += sizeof(uint32_t);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
                 auto boneName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
 
-                usedSize += sizeof(wchar_t)*(*nName);
+                usedSize += sizeof(wchar_t) * (*nName);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
-                // TODO - What to do with bone name?
-                boneName;
+                bones[j].name = boneName;
 
                 // Bone settings
-                auto bones = reinterpret_cast<const VSD3DStarter::Bone*>(meshData + usedSize);
+                auto cmobones = reinterpret_cast<const VSD3DStarter::Bone*>(meshData + usedSize);
                 usedSize += sizeof(VSD3DStarter::Bone);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
-                // TODO - What to do with bone data?
-                bones;
+                transforms[j] = XMLoadFloat4x4(&cmobones->LocalTransform);
+                invTransforms[j] = XMLoadFloat4x4(&cmobones->InvBindPos);
+
+                if (cmobones->ParentIndex < 0)
+                {
+                    if (!j)
+                        continue;
+
+                    // Add as a sibling of the root bone
+                    uint32_t index = 0;
+                    for (size_t visited = 0;; ++visited)
+                    {
+                        if (visited >= *nBones)
+                            throw std::runtime_error("Skeleton bones form an invalid graph");
+
+                        uint32_t sibling = bones[index].siblingIndex;
+                        if (sibling == ModelBone::c_Invalid)
+                        {
+                            bones[index].siblingIndex = j;
+                            break;
+                        }
+
+                        if (sibling >= *nBones)
+                            throw std::runtime_error("Skeleton bones corrupt");
+
+                        index = sibling;
+                    }
+                }
+                else if (static_cast<uint32_t>(cmobones->ParentIndex) >= *nBones)
+                {
+                    throw std::runtime_error("Skeleton bones corrupt");
+                }
+                else
+                {
+                    if (!j)
+                        throw std::runtime_error("First bone must be root!");
+
+                    auto index = static_cast<uint32_t>(cmobones->ParentIndex);
+
+                    bones[j].parentIndex = index;
+
+                    // Add as the only child of the parent
+                    if (bones[index].childIndex == ModelBone::c_Invalid)
+                    {
+                        bones[index].childIndex = j;
+                    }
+                    else
+                    {
+                        // Otherwise add as a sibling of the parent's other children
+                        index = bones[index].childIndex;
+                        for (size_t visited = 0;; ++visited)
+                        {
+                            if (visited >= *nBones)
+                                throw std::runtime_error("Skeleton bones form an invalid graph");
+
+                            uint32_t sibling = bones[index].siblingIndex;
+                            if (sibling == ModelBone::c_Invalid)
+                            {
+                                bones[index].siblingIndex = j;
+                                break;
+                            }
+
+                            if (sibling >= *nBones)
+                                throw std::runtime_error("Skeleton bones corrupt");
+
+                            index = sibling;
+                        }
+                    }
+                }
             }
+
+            std::swap(model->bones, bones);
+            std::swap(model->boneMatrices, transforms);
+            std::swap(model->invBindPoseMatrices, invTransforms);
 
             // Animation Clips
-            auto nClips = reinterpret_cast<const UINT*>(meshData + usedSize);
-            usedSize += sizeof(UINT);
-            if (dataSize < usedSize)
-                throw std::exception("End of file");
-
-            for (UINT j = 0; j < *nClips; ++j)
+            if (animsOffset)
             {
-                // Clip name
-                nName = reinterpret_cast<const UINT*>(meshData + usedSize);
-                usedSize += sizeof(UINT);
+                // Optional return for offset to start of animation clips in the CMO.
+
+                size_t offset = usedSize;
+
+                auto nClips = reinterpret_cast<const uint32_t*>(meshData + usedSize);
+                usedSize += sizeof(uint32_t);
                 if (dataSize < usedSize)
-                    throw std::exception("End of file");
+                    throw std::runtime_error("End of file");
 
-                auto clipName = reinterpret_cast<const wchar_t*>(meshData + usedSize);
-
-                usedSize += sizeof(wchar_t)*(*nName);
-                if (dataSize < usedSize)
-                    throw std::exception("End of file");
-
-                // TODO - What to do with clip name?
-                clipName;
-
-                auto clip = reinterpret_cast<const VSD3DStarter::Clip*>(meshData + usedSize);
-                usedSize += sizeof(VSD3DStarter::Clip);
-                if (dataSize < usedSize)
-                    throw std::exception("End of file");
-
-                if (!clip->keys)
-                    throw std::exception("Keyframes missing in clip");
-
-                auto keys = reinterpret_cast<const VSD3DStarter::Keyframe*>(meshData + usedSize);
-                usedSize += sizeof(VSD3DStarter::Keyframe) * clip->keys;
-                if (dataSize < usedSize)
-                    throw std::exception("End of file");
-
-                // TODO - What to do with keys and clip->StartTime, clip->EndTime?
-                keys;
+                if (*nClips > 0)
+                {
+                    *animsOffset = offset;
+                }
             }
         }
-    #else
-        UNREFERENCED_PARAMETER(bSkeleton);
-    #endif
 
         bool enableSkinning = (*nSkinVBs) != 0;
 
@@ -659,22 +715,22 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         const size_t stride = enableSkinning ? sizeof(VertexPositionNormalTangentColorTextureSkinning)
             : sizeof(VertexPositionNormalTangentColorTexture);
 
-        for (UINT j = 0; j < *nVBs; ++j)
+        for (size_t j = 0; j < *nVBs; ++j)
         {
-            size_t nVerts = vbData[j].nVerts;
+            const size_t nVerts = vbData[j].nVerts;
 
-            uint64_t sizeInBytes = uint64_t(stride) * uint64_t(nVerts);
+            const uint64_t sizeInBytes = uint64_t(stride) * uint64_t(nVerts);
 
             if (sizeInBytes > UINT32_MAX)
-                throw std::exception("VB too large");
+                throw std::runtime_error("VB too large");
 
             if (!(flags & ModelLoader_AllowLargeModels))
             {
                 if (sizeInBytes > uint64_t(D3D11_REQ_RESOURCE_SIZE_IN_MEGABYTES_EXPRESSION_A_TERM * 1024u * 1024u))
-                    throw std::exception("VB too large for DirectX 11");
+                    throw std::runtime_error("VB too large for DirectX 11");
             }
 
-            size_t bytes = static_cast<size_t>(sizeInBytes);
+            const size_t bytes = static_cast<size_t>(sizeInBytes);
 
             D3D11_BUFFER_DESC desc = {};
             desc.Usage = D3D11_USAGE_DEFAULT;
@@ -692,10 +748,10 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
             }
             else
             {
-                auto temp = std::make_unique<uint8_t[]>(bytes + (sizeof(UINT) * nVerts));
+                auto temp = std::make_unique<uint8_t[]>(bytes + (sizeof(uint32_t) * nVerts));
 
-                auto visited = reinterpret_cast<UINT*>(temp.get() + bytes);
-                memset(visited, 0xff, sizeof(UINT) * nVerts);
+                auto visited = reinterpret_cast<uint32_t*>(temp.get() + bytes);
+                memset(visited, 0xff, sizeof(uint32_t) * nVerts);
 
                 assert(vbData[j].ptr != nullptr);
 
@@ -728,7 +784,7 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
                 if (!fxFactoryDGSL)
                 {
                     // Need to fix up VB tex coords for UV transform which is not supported by basic effects
-                    for (UINT k = 0; k < *nSubmesh; ++k)
+                    for (size_t k = 0; k < *nSubmesh; ++k)
                     {
                         auto& sm = subMesh[k];
 
@@ -737,23 +793,23 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
 
                         if ((sm.IndexBufferIndex >= *nIBs)
                             || (sm.MaterialIndex >= materials.size()))
-                            throw std::exception("Invalid submesh found\n");
+                            throw std::out_of_range("Invalid submesh found\n");
 
                         XMMATRIX uvTransform = XMLoadFloat4x4(&materials[sm.MaterialIndex].pMaterial->UVTransform);
 
                         auto ib = ibData[sm.IndexBufferIndex].ptr;
 
-                        size_t count = ibData[sm.IndexBufferIndex].nIndices;
+                        const size_t count = ibData[sm.IndexBufferIndex].nIndices;
 
                         for (size_t q = 0; q < count; ++q)
                         {
                             size_t v = ib[q];
 
                             if (v >= nVerts)
-                                throw std::exception("Invalid index found\n");
+                                throw std::out_of_range("Invalid index found\n");
 
                             auto verts = reinterpret_cast<VertexPositionNormalTangentColorTexture*>(temp.get() + (v * stride));
-                            if (visited[v] == UINT(-1))
+                            if (visited[v] == uint32_t(-1))
                             {
                                 visited[v] = sm.MaterialIndex;
 
@@ -853,14 +909,14 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
         }
 
         // Build mesh parts
-        for (UINT j = 0; j < *nSubmesh; ++j)
+        for (size_t j = 0; j < *nSubmesh; ++j)
         {
             auto& sm = subMesh[j];
 
             if ((sm.IndexBufferIndex >= *nIBs)
                 || (sm.VertexBufferIndex >= *nVBs)
                 || (sm.MaterialIndex >= materials.size()))
-                throw std::exception("Invalid submesh found\n");
+                throw std::out_of_range("Invalid submesh found\n");
 
             auto& mat = materials[sm.MaterialIndex];
 
@@ -894,8 +950,14 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
     ID3D11Device* device,
     const wchar_t* szFileName,
     IEffectFactory& fxFactory,
-    ModelLoaderFlags flags)
+    ModelLoaderFlags flags,
+    size_t* animsOffset)
 {
+    if (animsOffset)
+    {
+        *animsOffset = 0;
+    }
+
     size_t dataSize = 0;
     std::unique_ptr<uint8_t[]> data;
     HRESULT hr = BinaryReader::ReadEntireFile(szFileName, data, &dataSize);
@@ -903,10 +965,10 @@ std::unique_ptr<Model> DirectX::Model::CreateFromCMO(
     {
         DebugTrace("ERROR: CreateFromCMO failed (%08X) loading '%ls'\n",
             static_cast<unsigned int>(hr), szFileName);
-        throw std::exception("CreateFromCMO");
+        throw std::runtime_error("CreateFromCMO");
     }
 
-    auto model = CreateFromCMO(device, data.get(), dataSize, fxFactory, flags);
+    auto model = CreateFromCMO(device, data.get(), dataSize, fxFactory, flags, animsOffset);
 
     model->name = szFileName;
 

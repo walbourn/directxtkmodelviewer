@@ -6,7 +6,7 @@
 //
 // http://go.microsoft.com/fwlink/?LinkId=226208
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -150,7 +150,7 @@ namespace DXUT
     enum FRAME_TRANSFORM_TYPE
     {
         FTT_RELATIVE = 0,
-        FTT_ABSOLUTE,		//This is not currently used but is here to support absolute transformations in the future
+        FTT_ABSOLUTE, // This is not currently used but is here to support absolute transformations in the future
     };
 
     //--------------------------------------------------------------------------------------
@@ -244,7 +244,7 @@ namespace DXUT
         uint32_t ChildFrame;
         uint32_t SiblingFrame;
         DirectX::XMFLOAT4X4 Matrix;
-        uint32_t AnimationDataIndex;		//Used to index which set of keyframes transforms this frame
+        uint32_t AnimationDataIndex; //Used to index which set of keyframes transforms this frame
     };
 
     struct SDKMESH_MATERIAL
@@ -279,7 +279,7 @@ namespace DXUT
 
         // PBR materials
         char    RMATexture[MAX_TEXTURE_NAME];
-        char    AlbetoTexture[MAX_TEXTURE_NAME];
+        char    AlbedoTexture[MAX_TEXTURE_NAME];
         char    NormalTexture[MAX_TEXTURE_NAME];
         char    EmissiveTexture[MAX_TEXTURE_NAME];
 

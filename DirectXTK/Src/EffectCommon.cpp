@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: EffectCommon.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -340,7 +340,7 @@ void EffectLights::ValidateLightIndex(int whichLight)
 {
     if (whichLight < 0 || whichLight >= MaxDirectionalLights)
     {
-        throw std::out_of_range("whichLight parameter out of range");
+        throw std::invalid_argument("whichLight parameter invalid");
     }
 }
 
@@ -449,6 +449,42 @@ ID3D11ShaderResourceView* EffectDeviceResources::GetDefaultTexture()
 
         return hr;
     });
+}
+
+ID3D11ShaderResourceView* EffectDeviceResources::GetDefaultNormalTexture()
+{
+    return DemandCreate(mDefaultNormalTexture, mMutex, [&](ID3D11ShaderResourceView** pResult) -> HRESULT
+        {
+            static const uint16_t s_pixel = 0x7f7f;
+
+            D3D11_SUBRESOURCE_DATA initData = { &s_pixel, sizeof(uint16_t), 0 };
+
+            D3D11_TEXTURE2D_DESC desc = {};
+            desc.Width = desc.Height = desc.MipLevels = desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_R8G8_UNORM;
+            desc.SampleDesc.Count = 1;
+            desc.Usage = D3D11_USAGE_IMMUTABLE;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+            ComPtr<ID3D11Texture2D> tex;
+            HRESULT hr = mDevice->CreateTexture2D(&desc, &initData, tex.GetAddressOf());
+
+            if (SUCCEEDED(hr))
+            {
+                SetDebugObjectName(tex.Get(), "DirectXTK:Effect");
+
+                D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+                SRVDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+                SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+                SRVDesc.Texture2D.MipLevels = 1;
+
+                hr = mDevice->CreateShaderResourceView(tex.Get(), &SRVDesc, pResult);
+                if (SUCCEEDED(hr))
+                    SetDebugObjectName(*pResult, "DirectXTK:Effect");
+            }
+
+            return hr;
+        });
 }
 
 // Gets device feature level

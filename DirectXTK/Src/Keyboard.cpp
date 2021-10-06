@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: Keyboard.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -67,7 +67,7 @@ public:
     {
         if (s_keyboard)
         {
-            throw std::exception("Keyboard is a singleton");
+            throw std::logic_error("Keyboard is a singleton");
         }
 
         s_keyboard = this;
@@ -209,7 +209,7 @@ public:
     {
         if (s_keyboard)
         {
-            throw std::exception("Keyboard is a singleton");
+            throw std::logic_error("Keyboard is a singleton");
         }
 
         s_keyboard = this;
@@ -342,7 +342,7 @@ public:
     {
         if (s_keyboard)
         {
-            throw std::exception("Keyboard is a singleton");
+            throw std::logic_error("Keyboard is a singleton");
         }
 
         s_keyboard = this;
@@ -576,9 +576,7 @@ Keyboard& Keyboard::operator= (Keyboard&& moveFrom) noexcept
 
 
 // Public destructor.
-Keyboard::~Keyboard()
-{
-}
+Keyboard::~Keyboard() = default;
 
 
 Keyboard::State Keyboard::GetState() const
@@ -603,7 +601,7 @@ bool Keyboard::IsConnected() const
 Keyboard& Keyboard::Get()
 {
     if (!Impl::s_keyboard || !Impl::s_keyboard->mOwner)
-        throw std::exception("Keyboard is a singleton");
+        throw std::logic_error("Keyboard singleton not created");
 
     return *Impl::s_keyboard->mOwner;
 }

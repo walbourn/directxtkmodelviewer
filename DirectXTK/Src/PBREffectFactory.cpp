@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: PBREffectFactory.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -79,10 +79,10 @@ std::shared_ptr<IEffect> PBREffectFactory::Impl::CreateEffect(IEffectFactory* fa
 
     effect->SetAlpha(info.alpha);
 
-    ComPtr<ID3D11ShaderResourceView> albetoSrv;
+    ComPtr<ID3D11ShaderResourceView> albedoSrv;
     if (info.diffuseTexture && *info.diffuseTexture)
     {
-        factory->CreateTexture(info.diffuseTexture, deviceContext, albetoSrv.GetAddressOf());
+        factory->CreateTexture(info.diffuseTexture, deviceContext, albedoSrv.GetAddressOf());
     }
 
     ComPtr<ID3D11ShaderResourceView> normalSrv;
@@ -98,7 +98,7 @@ std::shared_ptr<IEffect> PBREffectFactory::Impl::CreateEffect(IEffectFactory* fa
         factory->CreateTexture(info.specularTexture, deviceContext, rmaSrv.GetAddressOf());
     }
 
-    effect->SetSurfaceTextures(albetoSrv.Get(), normalSrv.Get(), rmaSrv.Get());
+    effect->SetSurfaceTextures(albedoSrv.Get(), normalSrv.Get(), rmaSrv.Get());
 
     if (info.emissiveTexture && *info.emissiveTexture)
     {
@@ -127,7 +127,7 @@ _Use_decl_annotations_
 void PBREffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView** textureView)
 {
     if (!name || !textureView)
-        throw std::exception("invalid arguments");
+        throw std::invalid_argument("name and textureView parameters can't be null");
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
     UNREFERENCED_PARAMETER(deviceContext);
@@ -155,14 +155,15 @@ void PBREffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceCont
             if (!GetFileAttributesExW(fullName, GetFileExInfoStandard, &fileAttr))
             {
                 DebugTrace("ERROR: PBREffectFactory could not find texture file '%ls'\n", name);
-                throw std::exception("CreateTexture");
+                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "PBREffectFactory::CreateTexture");
             }
         }
 
-        wchar_t ext[_MAX_EXT];
+        wchar_t ext[_MAX_EXT] = {};
         _wsplitpath_s(name, nullptr, 0, nullptr, 0, nullptr, 0, ext, _MAX_EXT);
+        bool isdds = _wcsicmp(ext, L".dds") == 0;
 
-        if (_wcsicmp(ext, L".dds") == 0)
+        if (isdds)
         {
             HRESULT hr = CreateDDSTextureFromFileEx(
                 mDevice.Get(), fullName, 0,
@@ -172,7 +173,7 @@ void PBREffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceCont
             {
                 DebugTrace("ERROR: CreateDDSTextureFromFile failed (%08X) for '%ls'\n",
                     static_cast<unsigned int>(hr), fullName);
-                throw std::exception("CreateDDSTextureFromFile");
+                throw std::runtime_error("PBREffectFactory::CreateDDSTextureFromFile");
             }
         }
     #if !defined(_XBOX_ONE) || !defined(_TITLE)
@@ -187,7 +188,7 @@ void PBREffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceCont
             {
                 DebugTrace("ERROR: CreateWICTextureFromFile failed (%08X) for '%ls'\n",
                     static_cast<unsigned int>(hr), fullName);
-                throw std::exception("CreateWICTextureFromFile");
+                throw std::runtime_error("PBREffectFactory::CreateWICTextureFromFile");
             }
         }
     #endif
@@ -201,7 +202,7 @@ void PBREffectFactory::Impl::CreateTexture(const wchar_t* name, ID3D11DeviceCont
             {
                 DebugTrace("ERROR: CreateWICTextureFromFile failed (%08X) for '%ls'\n",
                     static_cast<unsigned int>(hr), fullName);
-                throw std::exception("CreateWICTextureFromFile");
+                throw std::runtime_error("PBREffectFactory::CreateWICTextureFromFile");
             }
         }
 
@@ -232,21 +233,11 @@ PBREffectFactory::PBREffectFactory(_In_ ID3D11Device* device)
 {
 }
 
-PBREffectFactory::~PBREffectFactory()
-{
-}
 
+PBREffectFactory::PBREffectFactory(PBREffectFactory&&) noexcept = default;
+PBREffectFactory& PBREffectFactory::operator= (PBREffectFactory&&) noexcept = default;
+PBREffectFactory::~PBREffectFactory() = default;
 
-PBREffectFactory::PBREffectFactory(PBREffectFactory&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-PBREffectFactory& PBREffectFactory::operator= (PBREffectFactory&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
 
 _Use_decl_annotations_
 std::shared_ptr<IEffect> PBREffectFactory::CreateEffect(const EffectInfo& info, ID3D11DeviceContext* deviceContext)

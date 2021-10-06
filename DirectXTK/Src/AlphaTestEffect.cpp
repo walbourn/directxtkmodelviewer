@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: AlphaTestEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -146,10 +146,10 @@ AlphaTestEffect::Impl::Impl(_In_ ID3D11Device* device)
     referenceAlpha(0),
     vertexColorEnabled(false)
 {
-    static_assert(_countof(EffectBase<AlphaTestEffectTraits>::VertexShaderIndices) == AlphaTestEffectTraits::ShaderPermutationCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<AlphaTestEffectTraits>::VertexShaderBytecode) == AlphaTestEffectTraits::VertexShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<AlphaTestEffectTraits>::PixelShaderBytecode) == AlphaTestEffectTraits::PixelShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<AlphaTestEffectTraits>::PixelShaderIndices) == AlphaTestEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<AlphaTestEffectTraits>::VertexShaderIndices)) == AlphaTestEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<AlphaTestEffectTraits>::VertexShaderBytecode)) == AlphaTestEffectTraits::VertexShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<AlphaTestEffectTraits>::PixelShaderBytecode)) == AlphaTestEffectTraits::PixelShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<AlphaTestEffectTraits>::PixelShaderIndices)) == AlphaTestEffectTraits::ShaderPermutationCount, "array/max mismatch");
 }
 
 
@@ -183,6 +183,8 @@ int AlphaTestEffect::Impl::GetCurrentShaderPermutation() const noexcept
 // Sets our state onto the D3D device.
 void AlphaTestEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     // Compute derived parameter values.
     matrices.SetConstants(dirtyFlags, constants.worldViewProj);
 
@@ -259,7 +261,7 @@ void AlphaTestEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
                 break;
 
             default:
-                throw std::exception("Unknown alpha test function");
+                throw std::runtime_error("Unknown alpha test function");
         }
 
         // x = compareTo, y = threshold, zw = resultSelector.
@@ -270,9 +272,7 @@ void AlphaTestEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     }
 
     // Set the texture.
-    ID3D11ShaderResourceView* textures[1] = { texture.Get() };
-
-    deviceContext->PSSetShaderResources(0, 1, textures);
+    deviceContext->PSSetShaderResources(0, 1, texture.GetAddressOf());
     
     // Set shaders and constant buffers.
     ApplyShaders(deviceContext, GetCurrentShaderPermutation());
@@ -286,25 +286,9 @@ AlphaTestEffect::AlphaTestEffect(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-AlphaTestEffect::AlphaTestEffect(AlphaTestEffect&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-AlphaTestEffect& AlphaTestEffect::operator= (AlphaTestEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-AlphaTestEffect::~AlphaTestEffect()
-{
-}
+AlphaTestEffect::AlphaTestEffect(AlphaTestEffect&&) noexcept = default;
+AlphaTestEffect& AlphaTestEffect::operator= (AlphaTestEffect&&) noexcept = default;
+AlphaTestEffect::~AlphaTestEffect() = default;
 
 
 // IEffect methods.

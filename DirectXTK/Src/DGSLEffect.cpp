@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: DGSLEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -101,7 +101,7 @@ namespace
     static_assert((sizeof(MiscConstants) % 16) == 0, "CB size not padded correctly");
     static_assert((sizeof(BoneConstants) % 16) == 0, "CB size not padded correctly");
 
-    __declspec(align(16)) struct DGSLEffectConstants
+    XM_ALIGNED_STRUCT(16) DGSLEffectConstants
     {
         MaterialConstants   material;
         LightConstants      light;
@@ -232,8 +232,8 @@ public:
         mPixelShader(pixelShader),
         mDeviceResources(deviceResourcesPool.DemandCreate(device))
     {
-        static_assert(_countof(DGSLEffectTraits::VertexShaderBytecode) == DGSLEffectTraits::VertexShaderCount, "array/max mismatch");
-        static_assert(_countof(DGSLEffectTraits::PixelShaderBytecode) == DGSLEffectTraits::PixelShaderCount, "array/max mismatch");
+        static_assert(static_cast<int>(std::size(DGSLEffectTraits::VertexShaderBytecode)) == DGSLEffectTraits::VertexShaderCount, "array/max mismatch");
+        static_assert(static_cast<int>(std::size(DGSLEffectTraits::PixelShaderBytecode)) == DGSLEffectTraits::PixelShaderCount, "array/max mismatch");
 
         XMMATRIX id = XMMatrixIdentity();
         world = id;
@@ -353,6 +353,8 @@ SharedResourcePool<ID3D11Device*, DGSLEffect::Impl::DeviceResources> DGSLEffect:
 
 void DGSLEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     auto vertexShader = mDeviceResources->GetVertexShader(GetCurrentVSPermutation());
     auto pixelShader = mPixelShader.Get();
     if (!pixelShader)
@@ -475,17 +477,24 @@ void DGSLEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
             dirtyFlags &= ~EffectDirtyFlags::ConstantBufferBones;
         }
 
-        ID3D11Buffer* buffers[5] = { mCBMaterial.GetBuffer(), mCBLight.GetBuffer(), mCBObject.GetBuffer(),
-                                     mCBMisc.GetBuffer(), mCBBone.GetBuffer() };
+        ID3D11Buffer* buffers[5] =
+        {
+            mCBMaterial.GetBuffer(), mCBLight.GetBuffer(), mCBObject.GetBuffer(),
+            mCBMisc.GetBuffer(), mCBBone.GetBuffer()
+        };
 
         deviceContext->VSSetConstantBuffers(0, 5, buffers);
         deviceContext->PSSetConstantBuffers(0, 4, buffers);
     }
     else
     {
-        ID3D11Buffer* buffers[4] = { mCBMaterial.GetBuffer(), mCBLight.GetBuffer(), mCBObject.GetBuffer(), mCBMisc.GetBuffer() };
+        ID3D11Buffer* buffers[5] =
+        {
+            mCBMaterial.GetBuffer(), mCBLight.GetBuffer(), mCBObject.GetBuffer(),
+            mCBMisc.GetBuffer(), nullptr
+        };
 
-        deviceContext->VSSetConstantBuffers(0, 4, buffers);
+        deviceContext->VSSetConstantBuffers(0, 5, buffers);
         deviceContext->PSSetConstantBuffers(0, 4, buffers);
     }
 #endif
@@ -493,8 +502,17 @@ void DGSLEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     // Set the textures
     if (textureEnabled)
     {
-        ID3D11ShaderResourceView* txt[MaxTextures] = { textures[0].Get(), textures[1].Get(), textures[2].Get(), textures[3].Get(),
-                                                       textures[4].Get(), textures[5].Get(), textures[6].Get(), textures[7].Get() };
+        ID3D11ShaderResourceView* txt[MaxTextures] =
+        {
+            textures[0].Get(),
+            textures[1].Get(),
+            textures[2].Get(),
+            textures[3].Get(),
+            textures[4].Get(),
+            textures[5].Get(),
+            textures[6].Get(),
+            textures[7].Get()
+        };
         deviceContext->PSSetShaderResources(0, MaxTextures, txt);
     }
     else
@@ -507,8 +525,9 @@ void DGSLEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 
 void DGSLEffect::Impl::GetVertexShaderBytecode(_Out_ void const** pShaderByteCode, _Out_ size_t* pByteCodeLength) noexcept
 {
-    int permutation = GetCurrentVSPermutation();
+    assert(pShaderByteCode != nullptr && pByteCodeLength != nullptr);
 
+    int permutation = GetCurrentVSPermutation();
     assert(permutation < DGSLEffectTraits::VertexShaderCount);
     _Analysis_assume_(permutation < DGSLEffectTraits::VertexShaderCount);
 
@@ -571,22 +590,9 @@ DGSLEffect::DGSLEffect(_In_ ID3D11Device* device, _In_opt_ ID3D11PixelShader* pi
 }
 
 
-DGSLEffect::DGSLEffect(DGSLEffect&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-DGSLEffect& DGSLEffect::operator= (DGSLEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-DGSLEffect::~DGSLEffect()
-{
-}
+DGSLEffect::DGSLEffect(DGSLEffect&&) noexcept = default;
+DGSLEffect& DGSLEffect::operator= (DGSLEffect&&) noexcept = default;
+DGSLEffect::~DGSLEffect() = default;
 
 
 // IEffect methods.
@@ -773,7 +779,7 @@ void XM_CALLCONV DGSLEffect::SetAmbientLightColor(FXMVECTOR value)
 void DGSLEffect::SetLightEnabled(int whichLight, bool value)
 {
     if (whichLight < 0 || whichLight >= MaxDirectionalLights)
-        throw std::out_of_range("whichLight parameter out of range");
+        throw std::invalid_argument("whichLight parameter invalid");
 
     if (pImpl->lightEnabled[whichLight] == value)
         return;
@@ -801,7 +807,7 @@ void DGSLEffect::SetLightEnabled(int whichLight, bool value)
 void XM_CALLCONV DGSLEffect::SetLightDirection(int whichLight, FXMVECTOR value)
 {
     if (whichLight < 0 || whichLight >= MaxDirectionalLights)
-        throw std::out_of_range("whichLight parameter out of range");
+        throw std::invalid_argument("whichLight parameter invalid");
 
     // DGSL effects lights do not negate the direction like BasicEffect
     pImpl->constants.light.LightDirection[whichLight] = XMVectorNegate(value);
@@ -813,7 +819,7 @@ void XM_CALLCONV DGSLEffect::SetLightDirection(int whichLight, FXMVECTOR value)
 void XM_CALLCONV DGSLEffect::SetLightDiffuseColor(int whichLight, FXMVECTOR value)
 {
     if (whichLight < 0 || whichLight >= MaxDirectionalLights)
-        throw std::out_of_range("whichLight parameter out of range");
+        throw std::invalid_argument("whichLight parameter invalid");
 
     pImpl->lightDiffuseColor[whichLight] = value;
 
@@ -829,7 +835,7 @@ void XM_CALLCONV DGSLEffect::SetLightDiffuseColor(int whichLight, FXMVECTOR valu
 void XM_CALLCONV DGSLEffect::SetLightSpecularColor(int whichLight, FXMVECTOR value)
 {
     if (whichLight < 0 || whichLight >= MaxDirectionalLights)
-        throw std::out_of_range("whichLight parameter out of range");
+        throw std::invalid_argument("whichLight parameter invalid");
 
     pImpl->lightSpecularColor[whichLight] = value;
 
@@ -870,7 +876,7 @@ void DGSLEffect::SetTexture(_In_opt_ ID3D11ShaderResourceView* value)
 void DGSLEffect::SetTexture(int whichTexture, _In_opt_ ID3D11ShaderResourceView* value)
 {
     if (whichTexture < 0 || whichTexture >= MaxTextures)
-        throw std::out_of_range("whichTexture parameter out of range");
+        throw std::invalid_argument("whichTexture parameter invalid");
 
     pImpl->textures[whichTexture] = value;
 }
@@ -889,7 +895,7 @@ void DGSLEffect::SetWeightsPerVertex(int value)
         (value != 2) &&
         (value != 4))
     {
-        throw std::out_of_range("WeightsPerVertex must be 1, 2, or 4");
+        throw std::invalid_argument("WeightsPerVertex must be 1, 2, or 4");
     }
 
     pImpl->weightsPerVertex = value;
@@ -899,20 +905,25 @@ void DGSLEffect::SetWeightsPerVertex(int value)
 void DGSLEffect::SetBoneTransforms(_In_reads_(count) XMMATRIX const* value, size_t count)
 {
     if (!pImpl->weightsPerVertex)
-        throw std::exception("Skinning not enabled for this effect");
+        throw std::runtime_error("Skinning not enabled for this effect");
 
     if (count > MaxBones)
-        throw std::out_of_range("count parameter out of range");
+        throw std::invalid_argument("count parameter exceeds MaxBones");
 
     auto boneConstant = pImpl->constants.bones.Bones;
 
     for (size_t i = 0; i < count; i++)
     {
+#if DIRECTX_MATH_VERSION >= 313
+        XMStoreFloat3x4A(reinterpret_cast<XMFLOAT3X4A*>(&boneConstant[i]), value[i]);
+#else
+        // Xbox One XDK has an older version of DirectXMath
         XMMATRIX boneMatrix = XMMatrixTranspose(value[i]);
 
         boneConstant[i][0] = boneMatrix.r[0];
         boneConstant[i][1] = boneMatrix.r[1];
         boneConstant[i][2] = boneMatrix.r[2];
+#endif
     }
 
     pImpl->dirtyFlags |= EffectDirtyFlags::ConstantBufferBones;

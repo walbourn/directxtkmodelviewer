@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: SpriteFont.h
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -10,6 +10,8 @@
 #pragma once
 
 #include "SpriteBatch.h"
+
+#include <cstddef>
 
 
 namespace DirectX
@@ -23,8 +25,8 @@ namespace DirectX
         SpriteFont(_In_ ID3D11Device* device, _In_reads_bytes_(dataSize) uint8_t const* dataBlob, _In_ size_t dataSize, bool forceSRGB = false);
         SpriteFont(_In_ ID3D11ShaderResourceView* texture, _In_reads_(glyphCount) Glyph const* glyphs, _In_ size_t glyphCount, _In_ float lineSpacing);
 
-        SpriteFont(SpriteFont&& moveFrom) noexcept;
-        SpriteFont& operator= (SpriteFont&& moveFrom) noexcept;
+        SpriteFont(SpriteFont&&) noexcept;
+        SpriteFont& operator= (SpriteFont&&) noexcept;
 
         SpriteFont(SpriteFont const&) = delete;
         SpriteFont& operator= (SpriteFont const&) = delete;

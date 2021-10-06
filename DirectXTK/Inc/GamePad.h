@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: GamePad.h
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -46,8 +46,9 @@ namespace DirectX
     {
     public:
         GamePad() noexcept(false);
-        GamePad(GamePad&& moveFrom) noexcept;
-        GamePad& operator= (GamePad&& moveFrom) noexcept;
+
+        GamePad(GamePad&&) noexcept;
+        GamePad& operator= (GamePad&&) noexcept;
 
         GamePad(GamePad const&) = delete;
         GamePad& operator=(GamePad const&) = delete;

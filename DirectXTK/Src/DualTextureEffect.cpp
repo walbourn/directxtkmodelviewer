@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: DualTextureEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -128,10 +128,10 @@ DualTextureEffect::Impl::Impl(_In_ ID3D11Device* device)
   : EffectBase(device),
     vertexColorEnabled(false)
 {
-    static_assert(_countof(EffectBase<DualTextureEffectTraits>::VertexShaderIndices) == DualTextureEffectTraits::ShaderPermutationCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<DualTextureEffectTraits>::VertexShaderBytecode) == DualTextureEffectTraits::VertexShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<DualTextureEffectTraits>::PixelShaderBytecode) == DualTextureEffectTraits::PixelShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<DualTextureEffectTraits>::PixelShaderIndices) == DualTextureEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<DualTextureEffectTraits>::VertexShaderIndices)) == DualTextureEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<DualTextureEffectTraits>::VertexShaderBytecode)) == DualTextureEffectTraits::VertexShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<DualTextureEffectTraits>::PixelShaderBytecode)) == DualTextureEffectTraits::PixelShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<DualTextureEffectTraits>::PixelShaderIndices)) == DualTextureEffectTraits::ShaderPermutationCount, "array/max mismatch");
 }
 
 
@@ -158,6 +158,8 @@ int DualTextureEffect::Impl::GetCurrentShaderPermutation() const noexcept
 // Sets our state onto the D3D device.
 void DualTextureEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     // Compute derived parameter values.
     matrices.SetConstants(dirtyFlags, constants.worldViewProj);
 
@@ -186,25 +188,9 @@ DualTextureEffect::DualTextureEffect(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-DualTextureEffect::DualTextureEffect(DualTextureEffect&& moveFrom) noexcept
-  : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-DualTextureEffect& DualTextureEffect::operator= (DualTextureEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-DualTextureEffect::~DualTextureEffect()
-{
-}
+DualTextureEffect::DualTextureEffect(DualTextureEffect&&) noexcept = default;
+DualTextureEffect& DualTextureEffect::operator= (DualTextureEffect&&) noexcept = default;
+DualTextureEffect::~DualTextureEffect() = default;
 
 
 // IEffect methods.

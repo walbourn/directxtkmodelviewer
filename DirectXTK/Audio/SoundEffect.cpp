@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: SoundEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -15,6 +15,10 @@
 #include <list>
 
 #if (defined(_XBOX_ONE) && defined(_TITLE)) || defined(_GAMING_XBOX)
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wnonportable-system-include-path"
+#endif
+
 #include <apu.h>
 #include <shapexmacontext.h>
 #endif
@@ -62,10 +66,10 @@ public:
         {
             DebugTrace("WARNING: Destroying SoundEffect with %zu outstanding SoundEffectInstances\n", mInstances.size());
 
-            for (auto it = mInstances.begin(); it != mInstances.end(); ++it)
+            for (auto it : mInstances)
             {
-                assert(*it != nullptr);
-                (*it)->OnDestroyParent();
+                assert(it != nullptr);
+                it->OnDestroyParent();
             }
 
             mInstances.clear();
@@ -352,7 +356,7 @@ void SoundEffect::Impl::Play(float volume, float pitch, float pan)
         DebugTrace("ERROR: SoundEffect failed (%08X) when submitting buffer:\n", static_cast<unsigned int>(hr));
         DebugTrace("\tFormat Tag %u, %u channels, %u-bit, %u Hz, %u bytes\n",
             mWaveFormat->wFormatTag, mWaveFormat->nChannels, mWaveFormat->wBitsPerSample, mWaveFormat->nSamplesPerSec, mAudioBytes);
-        throw std::exception("SubmitSourceBuffer");
+        throw std::runtime_error("SubmitSourceBuffer");
     }
 
     InterlockedIncrement(&mOneShots);
@@ -375,7 +379,7 @@ SoundEffect::SoundEffect(AudioEngine* engine, const wchar_t* waveFileName)
     {
         DebugTrace("ERROR: SoundEffect failed (%08X) to load from .wav file \"%ls\"\n",
             static_cast<unsigned int>(hr), waveFileName);
-        throw std::exception("SoundEffect");
+        throw std::runtime_error("SoundEffect");
     }
 
 #ifdef DIRECTX_ENABLE_SEEK_TABLES
@@ -391,7 +395,7 @@ SoundEffect::SoundEffect(AudioEngine* engine, const wchar_t* waveFileName)
     {
         DebugTrace("ERROR: SoundEffect failed (%08X) to intialize from .wav file \"%ls\"\n",
             static_cast<unsigned int>(hr), waveFileName);
-        throw std::exception("SoundEffect");
+        throw std::runtime_error("SoundEffect");
     }
 }
 
@@ -409,7 +413,7 @@ SoundEffect::SoundEffect(AudioEngine* engine, std::unique_ptr<uint8_t[]>& wavDat
     if (FAILED(hr))
     {
         DebugTrace("ERROR: SoundEffect failed (%08X) to intialize\n", static_cast<unsigned int>(hr));
-        throw std::exception("SoundEffect");
+        throw std::runtime_error("SoundEffect");
     }
 }
 
@@ -428,7 +432,7 @@ SoundEffect::SoundEffect(AudioEngine* engine, std::unique_ptr<uint8_t[]>& wavDat
     if (FAILED(hr))
     {
         DebugTrace("ERROR: SoundEffect failed (%08X) to intialize\n", static_cast<unsigned int>(hr));
-        throw std::exception("SoundEffect");
+        throw std::runtime_error("SoundEffect");
     }
 }
 
@@ -444,32 +448,16 @@ SoundEffect::SoundEffect(AudioEngine* engine, std::unique_ptr<uint8_t[]>& wavDat
     if (FAILED(hr))
     {
         DebugTrace("ERROR: SoundEffect failed (%08X) to intialize\n", static_cast<unsigned int>(hr));
-        throw std::exception("SoundEffect");
+        throw std::runtime_error("SoundEffect");
     }
 }
 
 #endif
 
 
-// Move constructor.
-SoundEffect::SoundEffect(SoundEffect&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-SoundEffect& SoundEffect::operator= (SoundEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-SoundEffect::~SoundEffect()
-{
-}
+SoundEffect::SoundEffect(SoundEffect&&) noexcept = default;
+SoundEffect& SoundEffect::operator= (SoundEffect&&) noexcept = default;
+SoundEffect::~SoundEffect() = default;
 
 
 // Public methods.

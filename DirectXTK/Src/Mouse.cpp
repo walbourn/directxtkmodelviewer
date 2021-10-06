@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: Mouse.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -56,7 +56,7 @@ public:
     explicit Impl(Mouse* owner) noexcept(false) :
         mState{},
         mOwner(owner),
-        mIs4k(false),
+        mScale(1.f),
         mConnected(0),
         mDeviceToken(0),
         mMode(MODE_ABSOLUTE),
@@ -67,7 +67,7 @@ public:
     {
         if (s_mouse)
         {
-            throw std::exception("Mouse is a singleton");
+            throw std::logic_error("Mouse is a singleton");
         }
 
         s_mouse = this;
@@ -86,7 +86,7 @@ public:
         mScrollWheelValue.reset(CreateEventEx(nullptr, nullptr, CREATE_EVENT_MANUAL_RESET, EVENT_MODIFY_STATE | SYNCHRONIZE));
         if (!mScrollWheelValue)
         {
-            throw std::exception("CreateEventEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
         }
     }
 
@@ -121,7 +121,7 @@ public:
 
         DWORD result = WaitForSingleObjectEx(mScrollWheelValue.get(), 0, FALSE);
         if (result == WAIT_FAILED)
-            throw std::exception("WaitForSingleObjectEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
         if (result == WAIT_OBJECT_0)
         {
@@ -205,7 +205,7 @@ public:
         CURSORINFO info = { sizeof(CURSORINFO), 0, nullptr, {} };
         if (!GetCursorInfo(&info))
         {
-            throw std::exception("GetCursorInfo");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetCursorInfo");
         }
 
         bool isvisible = (info.flags & CURSOR_SHOWING) != 0;
@@ -217,7 +217,7 @@ public:
 
     State           mState;
     Mouse*          mOwner;
-    bool            mIs4k;
+    float           mScale;
     uint32_t        mConnected;
 
     static Mouse::Impl* s_mouse;
@@ -270,7 +270,7 @@ void Mouse::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
     DWORD result = WaitForSingleObjectEx(pImpl->mScrollWheelValue.get(), 0, FALSE);
     if (result == WAIT_FAILED)
-        throw std::exception("WaitForSingleObjectEx");
+        throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
     if (result == WAIT_OBJECT_0)
     {
@@ -367,28 +367,20 @@ void Mouse::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
         int xPos = static_cast<short>(LOWORD(lParam)); // GET_X_LPARAM(lParam);
         int yPos = static_cast<short>(HIWORD(lParam)); // GET_Y_LPARAM(lParam);
 
-        if (pImpl->mIs4k)
-        {
-            pImpl->mState.x = static_cast<int>(xPos) * 2;
-            pImpl->mState.y = static_cast<int>(yPos) * 2;
-        }
-        else
-        {
-            pImpl->mState.x = static_cast<int>(xPos);
-            pImpl->mState.y = static_cast<int>(yPos);
-        }
+        pImpl->mState.x = static_cast<int>(static_cast<float>(xPos) * pImpl->mScale);
+        pImpl->mState.y = static_cast<int>(static_cast<float>(yPos) * pImpl->mScale);
     }
 }
 
 
-void Mouse::SetResolution(bool use4k)
+void Mouse::SetResolution(float scale)
 {
     auto pImpl = Impl::s_mouse;
 
     if (!pImpl)
         return;
 
-    pImpl->mIs4k = use4k;
+    pImpl->mScale = scale;
 }
 
 
@@ -445,7 +437,7 @@ public:
     {
         if (s_mouse)
         {
-            throw std::exception("Mouse is a singleton");
+            throw std::logic_error("Mouse is a singleton");
         }
 
         s_mouse = this;
@@ -459,7 +451,7 @@ public:
             || !mAbsoluteMode
             || !mRelativeMode)
         {
-            throw std::exception("CreateEventEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
         }
     }
 
@@ -481,7 +473,7 @@ public:
 
         DWORD result = WaitForSingleObjectEx(mScrollWheelValue.get(), 0, FALSE);
         if (result == WAIT_FAILED)
-            throw std::exception("WaitForSingleObjectEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
         if (result == WAIT_OBJECT_0)
         {
@@ -493,7 +485,7 @@ public:
             result = WaitForSingleObjectEx(mRelativeRead.get(), 0, FALSE);
 
             if (result == WAIT_FAILED)
-                throw std::exception("WaitForSingleObjectEx");
+                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
             if (result == WAIT_OBJECT_0)
             {
@@ -528,7 +520,7 @@ public:
         tme.dwHoverTime = 1;
         if (!TrackMouseEvent(&tme))
         {
-            throw std::exception("TrackMouseEvent");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "TrackMouseEvent");
         }
     }
 
@@ -557,7 +549,7 @@ public:
         CURSORINFO info = { sizeof(CURSORINFO), 0, nullptr, {} };
         if (!GetCursorInfo(&info))
         {
-            throw std::exception("GetCursorInfo");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "GetCursorInfo");
         }
 
         bool isvisible = (info.flags & CURSOR_SHOWING) != 0;
@@ -581,7 +573,7 @@ public:
         Rid.hwndTarget = window;
         if (!RegisterRawInputDevices(&Rid, 1, sizeof(RAWINPUTDEVICE)))
         {
-            throw std::exception("RegisterRawInputDevices");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "RegisterRawInputDevices");
         }
 
         mWindow = window;
@@ -657,7 +649,7 @@ void Mouse::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
         return;
 
     HANDLE events[3] = { pImpl->mScrollWheelValue.get(), pImpl->mAbsoluteMode.get(), pImpl->mRelativeMode.get() };
-    switch (WaitForMultipleObjectsEx(_countof(events), events, FALSE, 0, FALSE))
+    switch (WaitForMultipleObjectsEx(static_cast<DWORD>(std::size(events)), events, FALSE, 0, FALSE))
     {
         default:
         case WAIT_TIMEOUT:
@@ -705,7 +697,7 @@ void Mouse::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
         case WAIT_FAILED:
-            throw std::exception("WaitForMultipleObjectsEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForMultipleObjectsEx");
     }
 
     switch (message)
@@ -743,7 +735,7 @@ void Mouse::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
                 UINT resultData = GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, &raw, &rawSize, sizeof(RAWINPUTHEADER));
                 if (resultData == UINT(-1))
                 {
-                    throw std::exception("GetRawInputData");
+                    throw std::runtime_error("GetRawInputData");
                 }
 
                 if (raw.header.dwType == RIM_TYPEMOUSE)
@@ -874,7 +866,7 @@ public:
     {
         if (s_mouse)
         {
-            throw std::exception("Mouse is a singleton");
+            throw std::logic_error("Mouse is a singleton");
         }
 
         s_mouse = this;
@@ -959,7 +951,7 @@ public:
     {
         if (s_mouse)
         {
-            throw std::exception("Mouse is a singleton");
+            throw std::logic_error("Mouse is a singleton");
         }
 
         s_mouse = this;
@@ -969,7 +961,7 @@ public:
         if (!mScrollWheelValue
             || !mRelativeRead)
         {
-            throw std::exception("CreateEventEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
         }
     }
 
@@ -986,7 +978,7 @@ public:
 
         DWORD result = WaitForSingleObjectEx(mScrollWheelValue.get(), 0, FALSE);
         if (result == WAIT_FAILED)
-            throw std::exception("WaitForSingleObjectEx");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
         if (result == WAIT_OBJECT_0)
         {
@@ -998,7 +990,7 @@ public:
             result = WaitForSingleObjectEx(mRelativeRead.get(), 0, FALSE);
 
             if (result == WAIT_FAILED)
-                throw std::exception("WaitForSingleObjectEx");
+                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForSingleObjectEx");
 
             if (result == WAIT_OBJECT_0)
             {
@@ -1419,9 +1411,7 @@ Mouse& Mouse::operator= (Mouse&& moveFrom) noexcept
 
 
 // Public destructor.
-Mouse::~Mouse()
-{
-}
+Mouse::~Mouse() = default;
 
 
 Mouse::State Mouse::GetState() const
@@ -1462,7 +1452,7 @@ void Mouse::SetVisible(bool visible)
 Mouse& Mouse::Get()
 {
     if (!Impl::s_mouse || !Impl::s_mouse->mOwner)
-        throw std::exception("Mouse is a singleton");
+        throw std::logic_error("Mouse singleton not created");
 
     return *Impl::s_mouse->mOwner;
 }

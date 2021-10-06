@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: CommonStates.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -171,25 +171,9 @@ CommonStates::CommonStates(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-CommonStates::CommonStates(CommonStates&& moveFrom) noexcept
-  : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-CommonStates& CommonStates::operator= (CommonStates&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-CommonStates::~CommonStates()
-{
-}
+CommonStates::CommonStates(CommonStates&&) noexcept = default;
+CommonStates& CommonStates::operator= (CommonStates&&) noexcept = default;
+CommonStates::~CommonStates() = default;
 
 
 //--------------------------------------------------------------------------------------

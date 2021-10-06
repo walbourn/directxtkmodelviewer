@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: SkinnedEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -276,10 +276,10 @@ SkinnedEffect::Impl::Impl(_In_ ID3D11Device* device)
     biasedVertexNormals(false),
     weightsPerVertex(4)
 {
-    static_assert(_countof(EffectBase<SkinnedEffectTraits>::VertexShaderIndices) == SkinnedEffectTraits::ShaderPermutationCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<SkinnedEffectTraits>::VertexShaderBytecode) == SkinnedEffectTraits::VertexShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<SkinnedEffectTraits>::PixelShaderBytecode) == SkinnedEffectTraits::PixelShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<SkinnedEffectTraits>::PixelShaderIndices) == SkinnedEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<SkinnedEffectTraits>::VertexShaderIndices)) == SkinnedEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<SkinnedEffectTraits>::VertexShaderBytecode)) == SkinnedEffectTraits::VertexShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<SkinnedEffectTraits>::PixelShaderBytecode)) == SkinnedEffectTraits::PixelShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<SkinnedEffectTraits>::PixelShaderIndices)) == SkinnedEffectTraits::ShaderPermutationCount, "array/max mismatch");
 
     lights.InitializeConstants(constants.specularColorAndPower, constants.lightDirection, constants.lightDiffuseColor, constants.lightSpecularColor);
 
@@ -336,6 +336,8 @@ int SkinnedEffect::Impl::GetCurrentShaderPermutation() const noexcept
 // Sets our state onto the D3D device.
 void SkinnedEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     // Compute derived parameter values.
     matrices.SetConstants(dirtyFlags, constants.worldViewProj);
 
@@ -344,11 +346,12 @@ void SkinnedEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     lights.SetConstants(dirtyFlags, matrices, constants.world, constants.worldInverseTranspose, constants.eyePosition, constants.diffuseColor, constants.emissiveColor, true);
 
     // Set the texture.
-    auto textures = texture.Get();
-    if (!textures)
-        textures = GetDefaultTexture();
+    ID3D11ShaderResourceView* textures[1] =
+    {
+        (texture) ? texture.Get() : GetDefaultTexture()
+    };
 
-    deviceContext->PSSetShaderResources(0, 1, &textures);
+    deviceContext->PSSetShaderResources(0, 1, textures);
 
     // Set shaders and constant buffers.
     ApplyShaders(deviceContext, GetCurrentShaderPermutation());
@@ -362,25 +365,9 @@ SkinnedEffect::SkinnedEffect(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-SkinnedEffect::SkinnedEffect(SkinnedEffect&& moveFrom) noexcept
-  : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-SkinnedEffect& SkinnedEffect::operator= (SkinnedEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-SkinnedEffect::~SkinnedEffect()
-{
-}
+SkinnedEffect::SkinnedEffect(SkinnedEffect&&) noexcept = default;
+SkinnedEffect& SkinnedEffect::operator= (SkinnedEffect&&) noexcept = default;
+SkinnedEffect::~SkinnedEffect() = default;
 
 
 // IEffect methods.
@@ -499,7 +486,7 @@ void SkinnedEffect::SetLightingEnabled(bool value)
 {
     if (!value)
     {
-        throw std::exception("SkinnedEffect does not support turning off lighting");
+        throw std::invalid_argument("SkinnedEffect does not support turning off lighting");
     }
 }
 
@@ -599,7 +586,7 @@ void SkinnedEffect::SetWeightsPerVertex(int value)
         (value != 2) &&
         (value != 4))
     {
-        throw std::out_of_range("WeightsPerVertex must be 1, 2, or 4");
+        throw std::invalid_argument("WeightsPerVertex must be 1, 2, or 4");
     }
 
     pImpl->weightsPerVertex = value;
@@ -609,17 +596,22 @@ void SkinnedEffect::SetWeightsPerVertex(int value)
 void SkinnedEffect::SetBoneTransforms(_In_reads_(count) XMMATRIX const* value, size_t count)
 {
     if (count > MaxBones)
-        throw std::out_of_range("count parameter out of range");
+        throw std::invalid_argument("count parameter exceeds MaxBones");
 
     auto boneConstant = pImpl->constants.bones;
 
     for (size_t i = 0; i < count; i++)
     {
+#if DIRECTX_MATH_VERSION >= 313
+        XMStoreFloat3x4A(reinterpret_cast<XMFLOAT3X4A*>(&boneConstant[i]), value[i]);
+#else
+        // Xbox One XDK has an older version of DirectXMath
         XMMATRIX boneMatrix = XMMatrixTranspose(value[i]);
 
         boneConstant[i][0] = boneMatrix.r[0];
         boneConstant[i][1] = boneMatrix.r[1];
         boneConstant[i][2] = boneMatrix.r[2];
+#endif
     }
 
     pImpl->dirtyFlags |= EffectDirtyFlags::ConstantBuffer;

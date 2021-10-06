@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: Keyboard.h
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -29,8 +29,9 @@ namespace DirectX
     {
     public:
         Keyboard() noexcept(false);
-        Keyboard(Keyboard&& moveFrom) noexcept;
-        Keyboard& operator= (Keyboard&& moveFrom) noexcept;
+
+        Keyboard(Keyboard&&) noexcept;
+        Keyboard& operator= (Keyboard&&) noexcept;
 
         Keyboard(Keyboard const&) = delete;
         Keyboard& operator=(Keyboard const&) = delete;

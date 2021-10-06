@@ -3,7 +3,7 @@
 //
 // DirectXTK for Audio header
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -11,6 +11,13 @@
 //--------------------------------------------------------------------------------------
 
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include <objbase.h>
 #include <mmreg.h>
@@ -37,7 +44,12 @@
 
 #include <xaudio2.h>
 #include <xaudio2fx.h>
+
+#pragma warning(push)
+#pragma warning(disable : 4619 4616 5246)
 #include <x3daudio.h>
+#pragma warning(pop)
+
 #include <xapofx.h>
 
 #ifndef USING_XAUDIO2_REDIST
@@ -50,13 +62,6 @@
 #endif
 
 #include <DirectXMath.h>
-
-
-#include <cstdint>
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
 
 
 namespace DirectX
@@ -202,8 +207,8 @@ namespace DirectX
             _In_opt_z_ const wchar_t* deviceId = nullptr,
             AUDIO_STREAM_CATEGORY category = AudioCategory_GameEffects) noexcept(false);
 
-        AudioEngine(AudioEngine&& moveFrom) noexcept;
-        AudioEngine& operator= (AudioEngine&& moveFrom) noexcept;
+        AudioEngine(AudioEngine&&) noexcept;
+        AudioEngine& operator= (AudioEngine&&) noexcept;
 
         AudioEngine(AudioEngine const&) = delete;
         AudioEngine& operator= (AudioEngine const&) = delete;
@@ -301,8 +306,8 @@ namespace DirectX
     public:
         WaveBank(_In_ AudioEngine* engine, _In_z_ const wchar_t* wbFileName);
 
-        WaveBank(WaveBank&& moveFrom) noexcept;
-        WaveBank& operator= (WaveBank&& moveFrom) noexcept;
+        WaveBank(WaveBank&&) noexcept;
+        WaveBank& operator= (WaveBank&&) noexcept;
 
         WaveBank(WaveBank const&) = delete;
         WaveBank& operator= (WaveBank const&) = delete;
@@ -383,8 +388,8 @@ namespace DirectX
 
 #endif
 
-        SoundEffect(SoundEffect&& moveFrom) noexcept;
-        SoundEffect& operator= (SoundEffect&& moveFrom) noexcept;
+        SoundEffect(SoundEffect&&) noexcept;
+        SoundEffect& operator= (SoundEffect&&) noexcept;
 
         SoundEffect(SoundEffect const&) = delete;
         SoundEffect& operator= (SoundEffect const&) = delete;
@@ -599,6 +604,8 @@ namespace DirectX
                 XMStoreFloat3(reinterpret_cast<XMFLOAT3*>(&Position), newPos);
             }
         }
+
+        void __cdecl EnableDefaultMultiChannel(unsigned int channels, float radius = 1.f);
     };
 
 
@@ -606,8 +613,8 @@ namespace DirectX
     class SoundEffectInstance
     {
     public:
-        SoundEffectInstance(SoundEffectInstance&& moveFrom) noexcept;
-        SoundEffectInstance& operator= (SoundEffectInstance&& moveFrom) noexcept;
+        SoundEffectInstance(SoundEffectInstance&&) noexcept;
+        SoundEffectInstance& operator= (SoundEffectInstance&&) noexcept;
 
         SoundEffectInstance(SoundEffectInstance const&) = delete;
         SoundEffectInstance& operator= (SoundEffectInstance const&) = delete;
@@ -623,11 +630,13 @@ namespace DirectX
         void __cdecl SetPitch(float pitch);
         void __cdecl SetPan(float pan);
 
-        void __cdecl Apply3D(const AudioListener& listener, const AudioEmitter& emitter, bool rhcoords = true);
+        void __cdecl Apply3D(const X3DAUDIO_LISTENER& listener, const X3DAUDIO_EMITTER& emitter, bool rhcoords = true);
 
         bool __cdecl IsLooped() const noexcept;
 
         SoundState __cdecl GetState() noexcept;
+
+        unsigned int __cdecl GetChannelCount() const noexcept;
 
         IVoiceNotify* __cdecl GetVoiceNotify() const noexcept;
 
@@ -650,8 +659,8 @@ namespace DirectX
     class SoundStreamInstance
     {
     public:
-        SoundStreamInstance(SoundStreamInstance&& moveFrom) noexcept;
-        SoundStreamInstance& operator= (SoundStreamInstance&& moveFrom) noexcept;
+        SoundStreamInstance(SoundStreamInstance&&) noexcept;
+        SoundStreamInstance& operator= (SoundStreamInstance&&) noexcept;
 
         SoundStreamInstance(SoundStreamInstance const&) = delete;
         SoundStreamInstance& operator= (SoundStreamInstance const&) = delete;
@@ -667,11 +676,13 @@ namespace DirectX
         void __cdecl SetPitch(float pitch);
         void __cdecl SetPan(float pan);
 
-        void __cdecl Apply3D(const AudioListener& listener, const AudioEmitter& emitter, bool rhcoords = true);
+        void __cdecl Apply3D(const X3DAUDIO_LISTENER& listener, const X3DAUDIO_EMITTER& emitter, bool rhcoords = true);
 
         bool __cdecl IsLooped() const noexcept;
 
         SoundState __cdecl GetState() noexcept;
+
+        unsigned int __cdecl GetChannelCount() const noexcept;
 
         IVoiceNotify* __cdecl GetVoiceNotify() const noexcept;
 
@@ -696,8 +707,9 @@ namespace DirectX
             _In_opt_ std::function<void __cdecl(DynamicSoundEffectInstance*)> bufferNeeded,
             int sampleRate, int channels, int sampleBits = 16,
             SOUND_EFFECT_INSTANCE_FLAGS flags = SoundEffectInstance_Default);
-        DynamicSoundEffectInstance(DynamicSoundEffectInstance&& moveFrom) noexcept;
-        DynamicSoundEffectInstance& operator= (DynamicSoundEffectInstance&& moveFrom) noexcept;
+
+        DynamicSoundEffectInstance(DynamicSoundEffectInstance&&) noexcept;
+        DynamicSoundEffectInstance& operator= (DynamicSoundEffectInstance&&) noexcept;
 
         DynamicSoundEffectInstance(DynamicSoundEffectInstance const&) = delete;
         DynamicSoundEffectInstance& operator= (DynamicSoundEffectInstance const&) = delete;
@@ -713,7 +725,7 @@ namespace DirectX
         void __cdecl SetPitch(float pitch);
         void __cdecl SetPan(float pan);
 
-        void __cdecl Apply3D(const AudioListener& listener, const AudioEmitter& emitter, bool rhcoords = true);
+        void __cdecl Apply3D(const X3DAUDIO_LISTENER& listener, const X3DAUDIO_EMITTER& emitter, bool rhcoords = true);
 
         void __cdecl SubmitBuffer(_In_reads_bytes_(audioBytes) const uint8_t* pAudioData, size_t audioBytes);
         void __cdecl SubmitBuffer(_In_reads_bytes_(audioBytes) const uint8_t* pAudioData, uint32_t offset, size_t audioBytes);
@@ -732,6 +744,8 @@ namespace DirectX
         int __cdecl GetPendingBufferCount() const noexcept;
 
         const WAVEFORMATEX* __cdecl GetFormat() const noexcept;
+
+        unsigned int __cdecl GetChannelCount() const noexcept;
 
     private:
         // Private implementation.

@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: BasicEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -392,10 +392,10 @@ BasicEffect::Impl::Impl(_In_ ID3D11Device* device)
     textureEnabled(false),
     biasedVertexNormals(false)
 {
-    static_assert(_countof(EffectBase<BasicEffectTraits>::VertexShaderIndices) == BasicEffectTraits::ShaderPermutationCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<BasicEffectTraits>::VertexShaderBytecode) == BasicEffectTraits::VertexShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<BasicEffectTraits>::PixelShaderBytecode) == BasicEffectTraits::PixelShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<BasicEffectTraits>::PixelShaderIndices) == BasicEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<BasicEffectTraits>::VertexShaderIndices)) == BasicEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<BasicEffectTraits>::VertexShaderBytecode)) == BasicEffectTraits::VertexShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<BasicEffectTraits>::PixelShaderBytecode)) == BasicEffectTraits::PixelShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<BasicEffectTraits>::PixelShaderIndices)) == BasicEffectTraits::ShaderPermutationCount, "array/max mismatch");
 
     lights.InitializeConstants(constants.specularColorAndPower, constants.lightDirection, constants.lightDiffuseColor, constants.lightSpecularColor);
 }
@@ -455,6 +455,8 @@ int BasicEffect::Impl::GetCurrentShaderPermutation() const noexcept
 // Sets our state onto the D3D device.
 void BasicEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     // Compute derived parameter values.
     matrices.SetConstants(dirtyFlags, constants.worldViewProj);
 
@@ -465,9 +467,7 @@ void BasicEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     // Set the texture.
     if (textureEnabled)
     {
-        ID3D11ShaderResourceView* textures[1] = { texture.Get() };
-
-        deviceContext->PSSetShaderResources(0, 1, textures);
+        deviceContext->PSSetShaderResources(0, 1, texture.GetAddressOf());
     }
 
     // Set shaders and constant buffers.
@@ -482,25 +482,9 @@ BasicEffect::BasicEffect(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-BasicEffect::BasicEffect(BasicEffect&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-BasicEffect& BasicEffect::operator= (BasicEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-BasicEffect::~BasicEffect()
-{
-}
+BasicEffect::BasicEffect(BasicEffect&&) noexcept = default;
+BasicEffect& BasicEffect::operator= (BasicEffect&&) noexcept = default;
+BasicEffect::~BasicEffect() = default;
 
 
 // IEffect methods.

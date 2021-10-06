@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: EnvironmentMapEffect.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -352,10 +352,10 @@ EnvironmentMapEffect::Impl::Impl(_In_ ID3D11Device* device)
     biasedVertexNormals(false),
     mapping(Mapping_Cube)
 {
-    static_assert(_countof(EffectBase<EnvironmentMapEffectTraits>::VertexShaderIndices) == EnvironmentMapEffectTraits::ShaderPermutationCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<EnvironmentMapEffectTraits>::VertexShaderBytecode) == EnvironmentMapEffectTraits::VertexShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<EnvironmentMapEffectTraits>::PixelShaderBytecode) == EnvironmentMapEffectTraits::PixelShaderCount, "array/max mismatch");
-    static_assert(_countof(EffectBase<EnvironmentMapEffectTraits>::PixelShaderIndices) == EnvironmentMapEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<EnvironmentMapEffectTraits>::VertexShaderIndices)) == EnvironmentMapEffectTraits::ShaderPermutationCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<EnvironmentMapEffectTraits>::VertexShaderBytecode)) == EnvironmentMapEffectTraits::VertexShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<EnvironmentMapEffectTraits>::PixelShaderBytecode)) == EnvironmentMapEffectTraits::PixelShaderCount, "array/max mismatch");
+    static_assert(static_cast<int>(std::size(EffectBase<EnvironmentMapEffectTraits>::PixelShaderIndices)) == EnvironmentMapEffectTraits::ShaderPermutationCount, "array/max mismatch");
 
     constants.environmentMapAmount = 1;
     constants.fresnelFactor = 1;
@@ -435,6 +435,8 @@ int EnvironmentMapEffect::Impl::GetCurrentShaderPermutation() const noexcept
 // Sets our state onto the D3D device.
 void EnvironmentMapEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
 {
+    assert(deviceContext != nullptr);
+
     // Compute derived parameter values.
     matrices.SetConstants(dirtyFlags, constants.worldViewProj);
 
@@ -445,7 +447,7 @@ void EnvironmentMapEffect::Impl::Apply(_In_ ID3D11DeviceContext* deviceContext)
     // Set the textures.
     ID3D11ShaderResourceView* textures[2] =
     {
-        texture.Get(),
+        (texture) ? texture.Get() : GetDefaultTexture(),
         environmentMap.Get(),
     };
 
@@ -463,25 +465,9 @@ EnvironmentMapEffect::EnvironmentMapEffect(_In_ ID3D11Device* device)
 }
 
 
-// Move constructor.
-EnvironmentMapEffect::EnvironmentMapEffect(EnvironmentMapEffect&& moveFrom) noexcept
-  : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-EnvironmentMapEffect& EnvironmentMapEffect::operator= (EnvironmentMapEffect&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
-
-
-// Public destructor.
-EnvironmentMapEffect::~EnvironmentMapEffect()
-{
-}
+EnvironmentMapEffect::EnvironmentMapEffect(EnvironmentMapEffect&&) noexcept = default;
+EnvironmentMapEffect& EnvironmentMapEffect::operator= (EnvironmentMapEffect&&) noexcept = default;
+EnvironmentMapEffect::~EnvironmentMapEffect() = default;
 
 
 // IEffect methods.
@@ -571,7 +557,7 @@ void EnvironmentMapEffect::SetLightingEnabled(bool value)
 {
     if (!value)
     {
-        throw std::exception("EnvironmentMapEffect does not support turning off lighting");
+        throw std::invalid_argument("EnvironmentMapEffect does not support turning off lighting");
     }
 }
 
@@ -684,7 +670,7 @@ void EnvironmentMapEffect::SetMode(EnvironmentMapEffect::Mapping mapping)
     {
         if (pImpl->GetDeviceFeatureLevel() < D3D_FEATURE_LEVEL_10_0)
         {
-            throw std::exception("Dual Parabola requires Feature Level 10.0 or later");
+            throw std::runtime_error("Dual Parabola requires Feature Level 10.0 or later");
         }
     }
 

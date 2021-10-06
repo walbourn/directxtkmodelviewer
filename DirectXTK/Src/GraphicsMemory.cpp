@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: GraphicsMemory.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -32,7 +32,7 @@ public:
     {
         if (s_graphicsMemory)
         {
-            throw std::exception("GraphicsMemory is a singleton");
+            throw std::logic_error("GraphicsMemory is a singleton");
         }
 
         s_graphicsMemory = this;
@@ -113,7 +113,7 @@ public:
                                        MEM_LARGE_PAGES | MEM_GRAPHICS | MEM_RESERVE | MEM_COMMIT,
                                        PAGE_WRITECOMBINE | PAGE_READWRITE | PAGE_GPU_READONLY);
             if (!mGrfxMemory)
-                throw  std::bad_alloc();
+                throw std::bad_alloc();
         }
 
         size_t mPageSize;
@@ -180,12 +180,12 @@ public:
 
         void Clear()
         {
-            for (auto it = mPages.begin(); it != mPages.end(); ++it)
+            for (auto& it : mPages)
             {
-                if (it->mGrfxMemory)
+                if (it.mGrfxMemory)
                 {
-                    VirtualFree(it->mGrfxMemory, 0, MEM_RELEASE);
-                    it->mGrfxMemory = nullptr;
+                    VirtualFree(it.mGrfxMemory, 0, MEM_RELEASE);
+                    it.mGrfxMemory = nullptr;
                 }
             }
 
@@ -222,7 +222,7 @@ public:
     {
         if (s_graphicsMemory)
         {
-            throw std::exception("GraphicsMemory is a singleton");
+            throw std::logic_error("GraphicsMemory is a singleton");
         }
 
         s_graphicsMemory = this;
@@ -301,9 +301,7 @@ GraphicsMemory& GraphicsMemory::operator= (GraphicsMemory&& moveFrom) noexcept
 
 
 // Public destructor.
-GraphicsMemory::~GraphicsMemory()
-{
-}
+GraphicsMemory::~GraphicsMemory() = default;
 
 
 void* GraphicsMemory::Allocate(_In_opt_ ID3D11DeviceContext* context, size_t size, int alignment)
@@ -321,7 +319,7 @@ void GraphicsMemory::Commit()
 GraphicsMemory& GraphicsMemory::Get()
 {
     if (!Impl::s_graphicsMemory || !Impl::s_graphicsMemory->mOwner)
-        throw std::exception("GraphicsMemory singleton not created");
+        throw std::logic_error("GraphicsMemory singleton not created");
 
     return *Impl::s_graphicsMemory->mOwner;
 }

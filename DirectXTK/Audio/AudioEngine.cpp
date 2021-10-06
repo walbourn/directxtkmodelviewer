@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: AudioEngine.cpp
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -32,7 +32,7 @@ namespace
             mCriticalError.reset(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
             if (!mCriticalError)
             {
-                throw std::exception("CreateEvent");
+                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
             }
         }
 
@@ -66,7 +66,7 @@ namespace
             mBufferEnd.reset(CreateEventEx(nullptr, nullptr, 0, EVENT_MODIFY_STATE | SYNCHRONIZE));
             if (!mBufferEnd)
             {
-                throw std::exception("CreateEvent");
+                throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "CreateEventEx");
             }
         }
 
@@ -248,7 +248,7 @@ namespace
     }
 }
 
-static_assert(_countof(gReverbPresets) == Reverb_MAX, "AUDIO_ENGINE_REVERB enum mismatch");
+static_assert(static_cast<unsigned int>(std::size(gReverbPresets)) == Reverb_MAX, "AUDIO_ENGINE_REVERB enum mismatch");
 
 
 //======================================================================================
@@ -578,10 +578,10 @@ HRESULT AudioEngine::Impl::Reset(const WAVEFORMATEX* wfx, const wchar_t* deviceI
     //
     // Inform any notify objects we are ready to go again
     //
-    for (auto it = mNotifyObjects.begin(); it != mNotifyObjects.end(); ++it)
+    for (auto it : mNotifyObjects)
     {
-        assert(*it != nullptr);
-        (*it)->OnReset();
+        assert(it != nullptr);
+        it->OnReset();
     }
 
     return S_OK;
@@ -590,23 +590,23 @@ HRESULT AudioEngine::Impl::Reset(const WAVEFORMATEX* wfx, const wchar_t* deviceI
 
 void AudioEngine::Impl::SetSilentMode()
 {
-    for (auto it = mNotifyObjects.begin(); it != mNotifyObjects.end(); ++it)
+    for (auto it : mNotifyObjects)
     {
-        assert(*it != nullptr);
-        (*it)->OnCriticalError();
+        assert(it != nullptr);
+        it->OnCriticalError();
     }
 
-    for (auto it = mOneShots.begin(); it != mOneShots.end(); ++it)
+    for (auto& it : mOneShots)
     {
-        assert(it->second != nullptr);
-        it->second->DestroyVoice();
+        assert(it.second != nullptr);
+        it.second->DestroyVoice();
     }
     mOneShots.clear();
 
-    for (auto it = mVoicePool.begin(); it != mVoicePool.end(); ++it)
+    for (auto& it : mVoicePool)
     {
-        assert(it->second != nullptr);
-        it->second->DestroyVoice();
+        assert(it.second != nullptr);
+        it.second->DestroyVoice();
     }
     mVoicePool.clear();
 
@@ -623,10 +623,10 @@ void AudioEngine::Impl::SetSilentMode()
 
 void AudioEngine::Impl::Shutdown() noexcept
 {
-    for (auto it = mNotifyObjects.begin(); it != mNotifyObjects.end(); ++it)
+    for (auto it : mNotifyObjects)
     {
-        assert(*it != nullptr);
-        (*it)->OnDestroyEngine();
+        assert(it != nullptr);
+        it->OnDestroyEngine();
     }
 
     if (xaudio2)
@@ -635,17 +635,17 @@ void AudioEngine::Impl::Shutdown() noexcept
 
         xaudio2->StopEngine();
 
-        for (auto it = mOneShots.begin(); it != mOneShots.end(); ++it)
+        for (auto& it : mOneShots)
         {
-            assert(it->second != nullptr);
-            it->second->DestroyVoice();
+            assert(it.second != nullptr);
+            it.second->DestroyVoice();
         }
         mOneShots.clear();
 
-        for (auto it = mVoicePool.begin(); it != mVoicePool.end(); ++it)
+        for (auto& it : mVoicePool)
         {
-            assert(it->second != nullptr);
-            it->second->DestroyVoice();
+            assert(it.second != nullptr);
+            it.second->DestroyVoice();
         }
         mVoicePool.clear();
 
@@ -674,7 +674,7 @@ bool AudioEngine::Impl::Update()
         return false;
 
     HANDLE events[2] = { mEngineCallback.mCriticalError.get(), mVoiceCallback.mBufferEnd.get() };
-    switch (WaitForMultipleObjectsEx(_countof(events), events, FALSE, 0, FALSE))
+    switch (WaitForMultipleObjectsEx(static_cast<DWORD>(std::size(events)), events, FALSE, 0, FALSE))
     {
         default:
         case WAIT_TIMEOUT:
@@ -723,16 +723,16 @@ bool AudioEngine::Impl::Update()
             break;
 
         case WAIT_FAILED:
-            throw std::exception("WaitForMultipleObjects");
+            throw std::system_error(std::error_code(static_cast<int>(GetLastError()), std::system_category()), "WaitForMultipleObjectsEx");
     }
 
     //
     // Inform any notify objects of updates
     //
-    for (auto it = mNotifyUpdates.begin(); it != mNotifyUpdates.end(); ++it)
+    for (auto it : mNotifyUpdates)
     {
-        assert(*it != nullptr);
-        (*it)->OnUpdate();
+        assert(it != nullptr);
+        it->OnUpdate();
     }
 
     return true;
@@ -790,10 +790,10 @@ AudioStatistics AudioEngine::Impl::GetStatistics() const
     stats.allocatedVoices = stats.allocatedVoicesOneShot = mOneShots.size() + mVoicePool.size();
     stats.allocatedVoicesIdle = mVoicePool.size();
 
-    for (auto it = mNotifyObjects.begin(); it != mNotifyObjects.end(); ++it)
+    for (const auto it : mNotifyObjects)
     {
-        assert(*it != nullptr);
-        (*it)->GatherStatistics(stats);
+        assert(it != nullptr);
+        it->GatherStatistics(stats);
     }
 
     assert(stats.allocatedVoices == (mOneShots.size() + mVoicePool.size() + mVoiceInstances));
@@ -804,16 +804,16 @@ AudioStatistics AudioEngine::Impl::GetStatistics() const
 
 void AudioEngine::Impl::TrimVoicePool()
 {
-    for (auto it = mNotifyObjects.begin(); it != mNotifyObjects.end(); ++it)
+    for (auto it : mNotifyObjects)
     {
-        assert(*it != nullptr);
-        (*it)->OnTrim();
+        assert(it != nullptr);
+        it->OnTrim();
     }
 
-    for (auto it = mVoicePool.begin(); it != mVoicePool.end(); ++it)
+    for (auto& it : mVoicePool)
     {
-        assert(it->second != nullptr);
-        it->second->DestroyVoice();
+        assert(it.second != nullptr);
+        it.second->DestroyVoice();
     }
     mVoicePool.clear();
 }
@@ -827,12 +827,12 @@ void AudioEngine::Impl::AllocateVoice(
     IXAudio2SourceVoice** voice)
 {
     if (!wfx)
-        throw std::exception("Wave format is required\n");
+        throw std::invalid_argument("Wave format is required\n");
 
     // No need to call IsValid on wfx because CreateSourceVoice will do that
 
     if (!voice)
-        throw std::exception("Voice pointer must be non-null");
+        throw std::invalid_argument("Voice pointer must be non-null");
 
     *voice = nullptr;
 
@@ -852,7 +852,7 @@ void AudioEngine::Impl::AllocateVoice(
             DebugTrace((flags & SoundEffectInstance_NoSetPitch)
                        ? "ERROR: One-shot voices must support pitch-shifting for voice reuse\n"
                        : "ERROR: One-use voices cannot use 3D positional audio\n");
-            throw std::exception("Invalid flags for one-shot voice");
+            throw std::invalid_argument("Invalid flags for one-shot voice");
         }
 
     #ifdef VERBOSE_TRACE
@@ -947,7 +947,7 @@ void AudioEngine::Impl::AllocateVoice(
                     if (FAILED(hr))
                     {
                         DebugTrace("ERROR: CreateSourceVoice (reuse) failed with error %08X\n", static_cast<unsigned int>(hr));
-                        throw std::exception("CreateSourceVoice");
+                        throw std::runtime_error("CreateSourceVoice");
                     }
                 }
 
@@ -956,7 +956,7 @@ void AudioEngine::Impl::AllocateVoice(
                 if (FAILED(hr))
                 {
                     DebugTrace("ERROR: SetSourceSampleRate failed with error %08X\n", static_cast<unsigned int>(hr));
-                    throw std::exception("SetSourceSampleRate");
+                    throw std::runtime_error("SetSourceSampleRate");
                 }
             }
         }
@@ -977,7 +977,7 @@ void AudioEngine::Impl::AllocateVoice(
         {
             DebugTrace("ERROR: Too many instance voices (%zu >= %zu); see TrimVoicePool\n",
                 mVoiceInstances + 1, maxVoiceInstances);
-            throw std::exception("Too many instance voices");
+            throw std::runtime_error("Too many instance voices");
         }
 
         UINT32 vflags = (flags & SoundEffectInstance_NoSetPitch) ? XAUDIO2_VOICE_NOPITCH : 0u;
@@ -1012,7 +1012,7 @@ void AudioEngine::Impl::AllocateVoice(
         if (FAILED(hr))
         {
             DebugTrace("ERROR: CreateSourceVoice failed with error %08X\n", static_cast<unsigned int>(hr));
-            throw std::exception("CreateSourceVoice");
+            throw std::runtime_error("CreateSourceVoice");
         }
         else if (!oneshot)
         {
@@ -1034,18 +1034,18 @@ void AudioEngine::Impl::DestroyVoice(_In_ IXAudio2SourceVoice* voice) noexcept
         return;
 
 #ifndef NDEBUG
-    for (auto it = mOneShots.cbegin(); it != mOneShots.cend(); ++it)
+    for (const auto& it : mOneShots)
     {
-        if (it->second == voice)
+        if (it.second == voice)
         {
             DebugTrace("ERROR: DestroyVoice should not be called for a one-shot voice\n");
             return;
         }
     }
 
-    for (auto it = mVoicePool.cbegin(); it != mVoicePool.cend(); ++it)
+    for (const auto& it : mVoicePool)
     {
-        if (it->second == voice)
+        if (it.second == voice)
         {
             DebugTrace("ERROR: DestroyVoice should not be called for a one-shot voice; see TrimVoicePool\n");
             return;
@@ -1081,17 +1081,17 @@ void AudioEngine::Impl::UnregisterNotify(_In_ IVoiceNotify* notify, bool usesOne
     {
         bool setevent = false;
 
-        for (auto it = mOneShots.begin(); it != mOneShots.end(); ++it)
+        for (auto& it : mOneShots)
         {
-            assert(it->second != nullptr);
+            assert(it.second != nullptr);
 
             XAUDIO2_VOICE_STATE state;
-            it->second->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+            it.second->GetState(&state, XAUDIO2_VOICE_NOSAMPLESPLAYED);
 
             if (state.pCurrentBufferContext == notify)
             {
-                (void)it->second->Stop(0);
-                (void)it->second->FlushSourceBuffers();
+                (void)it.second->Stop(0);
+                (void)it.second->FlushSourceBuffers();
                 setevent = true;
             }
         }
@@ -1131,7 +1131,7 @@ AudioEngine::AudioEngine(
             if (flags & AudioEngine_ThrowOnNoAudioHW)
             {
                 DebugTrace("ERROR: AudioEngine found no default audio device\n");
-                throw std::exception("AudioEngineNoAudioHW");
+                throw std::runtime_error("AudioEngineNoAudioHW");
             }
             else
             {
@@ -1143,25 +1143,15 @@ AudioEngine::AudioEngine(
             DebugTrace("ERROR: AudioEngine failed (%08X) to initialize using device [%ls]\n",
                 static_cast<unsigned int>(hr),
                 (deviceId) ? deviceId : L"default");
-            throw std::exception("AudioEngine");
+            throw std::runtime_error("AudioEngine");
         }
     }
 }
 
 
-// Move constructor.
-AudioEngine::AudioEngine(AudioEngine&& moveFrom) noexcept
-    : pImpl(std::move(moveFrom.pImpl))
-{
-}
-
-
-// Move assignment.
-AudioEngine& AudioEngine::operator= (AudioEngine&& moveFrom) noexcept
-{
-    pImpl = std::move(moveFrom.pImpl);
-    return *this;
-}
+// Move ctor/operator.
+AudioEngine::AudioEngine(AudioEngine&&) noexcept = default;
+AudioEngine& AudioEngine::operator= (AudioEngine&&) noexcept = default;
 
 
 // Public destructor.
@@ -1198,7 +1188,7 @@ bool AudioEngine::Reset(const WAVEFORMATEX* wfx, const wchar_t* deviceId)
             if (pImpl->mEngineFlags & AudioEngine_ThrowOnNoAudioHW)
             {
                 DebugTrace("ERROR: AudioEngine found no default audio device on Reset\n");
-                throw std::exception("AudioEngineNoAudioHW");
+                throw std::runtime_error("AudioEngineNoAudioHW");
             }
             else
             {
@@ -1210,7 +1200,7 @@ bool AudioEngine::Reset(const WAVEFORMATEX* wfx, const wchar_t* deviceId)
         {
             DebugTrace("ERROR: AudioEngine failed (%08X) to Reset using device [%ls]\n",
                 static_cast<unsigned int>(hr), (deviceId) ? deviceId : L"default");
-            throw std::exception("AudioEngine::Reset");
+            throw std::runtime_error("AudioEngine::Reset");
         }
     }
 
@@ -1262,7 +1252,7 @@ void AudioEngine::SetMasterVolume(float volume)
 void AudioEngine::SetReverb(AUDIO_ENGINE_REVERB reverb)
 {
     if (reverb >= Reverb_MAX)
-        throw std::out_of_range("AudioEngine::SetReverb");
+        throw std::invalid_argument("reverb parameter is invalid");
 
     if (reverb == Reverb_Off)
     {
@@ -1350,7 +1340,7 @@ bool AudioEngine::IsCriticalError() const noexcept
 void AudioEngine::SetDefaultSampleRate(int sampleRate)
 {
     if ((sampleRate < XAUDIO2_MIN_SAMPLE_RATE) || (sampleRate > XAUDIO2_MAX_SAMPLE_RATE))
-        throw std::exception("Default sample rate is out of range");
+        throw std::out_of_range("Default sample rate is out of range");
 
     pImpl->defaultRate = sampleRate;
 }
@@ -1552,7 +1542,7 @@ std::vector<AudioEngine::RendererDetail> AudioEngine::GetRendererDetails()
     while (operation->Status == Windows::Foundation::AsyncStatus::Started) { Sleep(100); }
     if (operation->Status != Windows::Foundation::AsyncStatus::Completed)
     {
-        throw std::exception("FindAllAsync");
+        throw std::runtime_error("FindAllAsync");
     }
 
     DeviceInformationCollection^ devices = operation->GetResults();
@@ -1607,7 +1597,7 @@ std::vector<AudioEngine::RendererDetail> AudioEngine::GetRendererDetails()
 
     if (status != ABI::Windows::Foundation::AsyncStatus::Completed)
     {
-        throw std::exception("FindAllAsyncDeviceClass");
+        throw std::runtime_error("FindAllAsyncDeviceClass");
     }
 
     ComPtr<IVectorView<DeviceInformation*>> devices;

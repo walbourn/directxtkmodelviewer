@@ -1,7 +1,7 @@
 //--------------------------------------------------------------------------------------
 // File: pch.h
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //
 // http://go.microsoft.com/fwlink/?LinkId=248929
@@ -107,23 +107,24 @@
 #include <d3d11_1.h>
 #endif
 
-#define _XM_NO_XMVECTOR_OVERLOADS_
-
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
-#include <DirectXCollision.h>
-
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <cwchar>
 #include <exception>
+#include <iterator>
 #include <list>
 #include <map>
 #include <memory>
+#include <new>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -134,6 +135,16 @@
 #pragma warning(pop)
 
 #include <malloc.h>
+
+#define _XM_NO_XMVECTOR_OVERLOADS_
+
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <DirectXCollision.h>
+
+#if (DIRECTX_MATH_VERSION < 315)
+#define XM_ALIGNED_STRUCT(x) __declspec(align(x)) struct
+#endif
 
 #pragma warning(push)
 #pragma warning(disable : 4467 5038 5204 5220)
