@@ -4,6 +4,9 @@ Release available for download on [GitHub](https://github.com/walbourn/directxtk
 
 ## Release History
 
+## October 14, 2021
+* Updated for October 2021 release of DirectX Tool Kit
+
 ## June 1, 2020
 * Updated for June 2020 release of DirectX Tool Kit
 * Minor code review
