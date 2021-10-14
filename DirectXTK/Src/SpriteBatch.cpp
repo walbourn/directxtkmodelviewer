@@ -24,11 +24,11 @@ namespace
 {
     // Include the precompiled shader code.
     #if defined(_XBOX_ONE) && defined(_TITLE)
-    #include "Shaders/Compiled/XboxOneSpriteEffect_SpriteVertexShader.inc"
-    #include "Shaders/Compiled/XboxOneSpriteEffect_SpritePixelShader.inc"
+    #include "XboxOneSpriteEffect_SpriteVertexShader.inc"
+    #include "XboxOneSpriteEffect_SpritePixelShader.inc"
     #else
-    #include "Shaders/Compiled/SpriteEffect_SpriteVertexShader.inc"
-    #include "Shaders/Compiled/SpriteEffect_SpritePixelShader.inc"
+    #include "SpriteEffect_SpriteVertexShader.inc"
+    #include "SpriteEffect_SpritePixelShader.inc"
     #endif
 
 
@@ -62,7 +62,7 @@ namespace
 XM_ALIGNED_STRUCT(16) SpriteBatch::Impl : public AlignedNew<SpriteBatch::Impl>
 {
 public:
-    Impl(_In_ ID3D11DeviceContext* deviceContext);
+    explicit Impl(_In_ ID3D11DeviceContext* deviceContext);
 
     void XM_CALLCONV Begin(SpriteSortMode sortMode,
         _In_opt_ ID3D11BlendState* blendState,

@@ -49,6 +49,7 @@ namespace DirectX
         ModelLoader_MaterialColorsSRGB  = 0x4,
         ModelLoader_AllowLargeModels    = 0x8,
         ModelLoader_IncludeBones        = 0x10,
+        ModelLoader_DisableSkinning     = 0x20,
     };
 
     //----------------------------------------------------------------------------------
@@ -199,6 +200,14 @@ namespace DirectX
             FXMMATRIX world, CXMMATRIX view, CXMMATRIX projection,
             bool alpha = false,
             _In_opt_ std::function<void __cdecl()> setCustomState = nullptr) const;
+
+        static void SetDepthBufferMode(bool reverseZ)
+        {
+            s_reversez = reverseZ;
+        }
+
+    private:
+        static bool s_reversez;
     };
 
 

@@ -73,35 +73,35 @@ namespace
 namespace
 {
 #if defined(_XBOX_ONE) && defined(_TITLE)
-    #include "Shaders/Compiled/XboxOneToneMap_VSQuad.inc"
+    #include "XboxOneToneMap_VSQuad.inc"
 
-    #include "Shaders/Compiled/XboxOneToneMap_PSCopy.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSSaturate.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSReinhard.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSACESFilmic.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PS_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSSaturate_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSReinhard_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSACESFilmic_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_Saturate.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_Reinhard.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_ACESFilmic.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_Saturate_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_Reinhard_SRGB.inc"
-    #include "Shaders/Compiled/XboxOneToneMap_PSHDR10_ACESFilmic_SRGB.inc"
+    #include "XboxOneToneMap_PSCopy.inc"
+    #include "XboxOneToneMap_PSSaturate.inc"
+    #include "XboxOneToneMap_PSReinhard.inc"
+    #include "XboxOneToneMap_PSACESFilmic.inc"
+    #include "XboxOneToneMap_PS_SRGB.inc"
+    #include "XboxOneToneMap_PSSaturate_SRGB.inc"
+    #include "XboxOneToneMap_PSReinhard_SRGB.inc"
+    #include "XboxOneToneMap_PSACESFilmic_SRGB.inc"
+    #include "XboxOneToneMap_PSHDR10.inc"
+    #include "XboxOneToneMap_PSHDR10_Saturate.inc"
+    #include "XboxOneToneMap_PSHDR10_Reinhard.inc"
+    #include "XboxOneToneMap_PSHDR10_ACESFilmic.inc"
+    #include "XboxOneToneMap_PSHDR10_Saturate_SRGB.inc"
+    #include "XboxOneToneMap_PSHDR10_Reinhard_SRGB.inc"
+    #include "XboxOneToneMap_PSHDR10_ACESFilmic_SRGB.inc"
 #else
-    #include "Shaders/Compiled/ToneMap_VSQuad.inc"
+    #include "ToneMap_VSQuad.inc"
 
-    #include "Shaders/Compiled/ToneMap_PSCopy.inc"
-    #include "Shaders/Compiled/ToneMap_PSSaturate.inc"
-    #include "Shaders/Compiled/ToneMap_PSReinhard.inc"
-    #include "Shaders/Compiled/ToneMap_PSACESFilmic.inc"
-    #include "Shaders/Compiled/ToneMap_PS_SRGB.inc"
-    #include "Shaders/Compiled/ToneMap_PSSaturate_SRGB.inc"
-    #include "Shaders/Compiled/ToneMap_PSReinhard_SRGB.inc"
-    #include "Shaders/Compiled/ToneMap_PSACESFilmic_SRGB.inc"
-    #include "Shaders/Compiled/ToneMap_PSHDR10.inc"
+    #include "ToneMap_PSCopy.inc"
+    #include "ToneMap_PSSaturate.inc"
+    #include "ToneMap_PSReinhard.inc"
+    #include "ToneMap_PSACESFilmic.inc"
+    #include "ToneMap_PS_SRGB.inc"
+    #include "ToneMap_PSSaturate_SRGB.inc"
+    #include "ToneMap_PSReinhard_SRGB.inc"
+    #include "ToneMap_PSACESFilmic_SRGB.inc"
+    #include "ToneMap_PSHDR10.inc"
 #endif
 }
 
@@ -240,7 +240,7 @@ namespace
 class ToneMapPostProcess::Impl : public AlignedNew<ToneMapConstants>
 {
 public:
-    Impl(_In_ ID3D11Device* device);
+    explicit Impl(_In_ ID3D11Device* device);
 
     void Process(_In_ ID3D11DeviceContext* deviceContext, std::function<void __cdecl()>& setCustomState);
 
@@ -334,7 +334,7 @@ void ToneMapPostProcess::Impl::Process(
     void *grfxMemory;
     mConstantBuffer.SetData(deviceContext, constants, &grfxMemory);
 
-    Microsoft::WRL::ComPtr<ID3D11DeviceContextX> deviceContextX;
+    ComPtr<ID3D11DeviceContextX> deviceContextX;
     ThrowIfFailed(deviceContext->QueryInterface(IID_GRAPHICS_PPV_ARGS(deviceContextX.GetAddressOf())));
 
     auto buffer = mConstantBuffer.GetBuffer();
