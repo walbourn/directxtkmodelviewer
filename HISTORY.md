@@ -4,6 +4,11 @@ Release available for download on [GitHub](https://github.com/walbourn/directxtk
 
 ## Release History
 
+## October 18, 2021
+* Added model bone rendering modes (skinned / rigid-body vs. world)
+* Fixed loading of skinned models for SDKMESH v2
+* Code cleanup
+
 ## October 14, 2021
 * Updated for October 2021 release of DirectX Tool Kit
 
