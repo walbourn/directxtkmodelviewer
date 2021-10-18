@@ -4,7 +4,7 @@
 // Helper function to find the location of a media file for Windows desktop apps
 // since they lack appx packaging support.
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //-------------------------------------------------------------------------------------
 

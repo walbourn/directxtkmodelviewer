@@ -3,7 +3,7 @@
 //
 // Ken Shoemake, "Arcball Rotation Control", Graphics Gems IV, pg 176 - 192  
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //--------------------------------------------------------------------------------------
 

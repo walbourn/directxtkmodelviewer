@@ -3,7 +3,7 @@
 //
 // Header for standard system include files.
 //
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 //--------------------------------------------------------------------------------------
 
@@ -37,13 +37,9 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#include <d3d11_1.h>
 
-#if defined(NTDDI_WIN10_RS2)
+#include <d3d11_1.h>
 #include <dxgi1_6.h>
-#else
-#include <dxgi1_5.h>
-#endif
 
 #ifdef _DEBUG
 #include <dxgidebug.h>
@@ -56,7 +52,12 @@
 #include <DirectXColors.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <cstdio>
+#include <cwchar>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <set>
 #include <stdexcept>

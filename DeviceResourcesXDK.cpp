@@ -107,7 +107,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
 {
     if (!m_window)
     {
-        throw std::exception("Call SetWindow with a valid CoreWindow pointer");
+        throw std::logic_error("Call SetWindow with a valid CoreWindow pointer");
     }
 
     // Clear the previous window size specific context.
