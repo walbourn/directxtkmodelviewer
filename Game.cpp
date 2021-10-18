@@ -48,6 +48,8 @@ Game::Game() noexcept(false) :
     m_reloadModel(false),
     m_lhcoords(true),
     m_fpscamera(false),
+    m_boneMode(false),
+    m_skinning(false),
     m_toneMapMode(ToneMapPostProcess::Reinhard),
     m_selectFile(0),
     m_firstFile(0)
@@ -303,6 +305,11 @@ void Game::Update(DX::StepTimer const& timer)
                 m_cameraRot = m_modelRot = Quaternion::Identity;
             }
 
+            if (m_gamepadButtonTracker.leftStick == GamePad::ButtonStateTracker::PRESSED)
+            {
+                CycleBoneRenderMode();
+            }
+
             // TODO - m_ibl
         }
     }
@@ -414,6 +421,9 @@ void Game::Update(DX::StepTimer const& timer)
 
         if (m_keyboardTracker.pressed.T)
             CycleToneMapOperator();
+
+        if (m_keyboardTracker.pressed.N)
+            CycleBoneRenderMode();
 
         if (m_keyboardTracker.pressed.O)
         {
@@ -593,8 +603,20 @@ void Game::Render()
         {
             auto context = m_deviceResources->GetD3DDeviceContext();
 
+            if (!m_model->bones.empty())
+            {
+                const size_t nbones = m_model->bones.size();
+                assert(m_bones != 0);
+                m_model->CopyAbsoluteBoneTransformsTo(nbones, m_bones.get());
+                if (m_skinning)
+                {
+                    for (size_t j = 0; j < nbones; ++j)
+                    {
+                        m_bones[j] = XMMatrixMultiply(m_model->invBindPoseMatrices[j], m_bones[j]);
+                    }
+                }
+            }
 
-            //--- Set PBR lighting sources ---
             D3D11_SHADER_RESOURCE_VIEW_DESC desc;
             m_radianceIBL[m_ibl]->GetDesc(&desc);
 
@@ -605,73 +627,37 @@ void Game::Render()
                 {
                     pbr->SetIBLTextures(m_radianceIBL[m_ibl].Get(), desc.TextureCube.MipLevels, m_irradianceIBL[m_ibl].Get());
                 }
+
+                if (m_skinning && !m_boneMode)
+                {
+                    auto skinning = dynamic_cast<IEffectSkinning*>(effect);
+                    if (skinning)
+                    {
+                        skinning->ResetBoneTransforms();
+                    }
+                }
             });
 
-#if 0
-            m_model->Draw(context, *, m_world, m_view, m_proj, m_wireframe);
-#else
-            // Draw opaque parts
-            for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+            for (auto& mit : m_model->meshes)
             {
-                auto mesh = it->get();
-                assert(mesh != 0);
-
-                mesh->PrepareForRendering(context, *m_states, false, m_wireframe);
-
-                if (m_wireframe)
-                    context->RSSetState(m_states->Wireframe());
-                else
-                    context->RSSetState(m_ccw ? m_states->CullCounterClockwise() : m_states->CullClockwise());
-
-                for (auto pit = mesh->meshParts.cbegin(); pit != mesh->meshParts.cend(); ++pit)
-                {
-                    auto part = pit->get();
-                    if (part->isAlpha)
-                        continue;
-
-                    auto imatrices = dynamic_cast<IEffectMatrices*>(part->effect.get());
-                    if (imatrices)
-                    {
-                        imatrices->SetWorld(m_world);
-                        imatrices->SetView(m_view);
-                        imatrices->SetProjection(m_proj);
-                    }
-
-                    part->Draw(context, part->effect.get(), part->inputLayout.Get() );
-                }
+                mit->ccw = m_ccw;
             }
 
-            // Draw alpha parts
-            for (auto it = m_model->meshes.cbegin(); it != m_model->meshes.cend(); ++it)
+            if (m_boneMode)
             {
-                auto mesh = it->get();
-                assert(mesh != 0);
-
-                mesh->PrepareForRendering(context, *m_states, true, m_wireframe);
-
-                if (m_wireframe)
-                    context->RSSetState(m_states->Wireframe());
-                else
-                    context->RSSetState(m_ccw ? m_states->CullCounterClockwise() : m_states->CullClockwise());
-
-                for (auto pit = mesh->meshParts.cbegin(); pit != mesh->meshParts.cend(); ++pit)
+                if (m_skinning)
                 {
-                    auto part = pit->get();
-                    if (!part->isAlpha)
-                        continue;
-
-                    auto imatrices = dynamic_cast<IEffectMatrices*>(part->effect.get());
-                    if (imatrices)
-                    {
-                        imatrices->SetWorld(m_world);
-                        imatrices->SetView(m_view);
-                        imatrices->SetProjection(m_proj);
-                    }
-
-                    part->Draw(context, part->effect.get(), part->inputLayout.Get());
+                    m_model->DrawSkinned(context, *m_states, m_model->bones.size(), m_bones.get(), m_world, m_view, m_proj, m_wireframe);
+                }
+                else
+                {
+                    m_model->Draw(context, *m_states, m_model->bones.size(), m_bones.get(), m_world, m_view, m_proj, m_wireframe);
                 }
             }
-#endif
+            else
+            {
+                m_model->Draw(context, *m_states, m_world, m_view, m_proj, m_wireframe);
+            }
 
             if (*m_szStatus && m_showHud)
             {
@@ -719,8 +705,18 @@ void Game::Render()
                 }
 #endif
 
+                const wchar_t* viewMode;
+                if (m_boneMode)
+                {
+                    viewMode = (m_skinning) ? L"Model bone (Vertex skinning)" : L"Model bone (Rigid)";
+                }
+                else
+                {
+                    viewMode = (m_model && !m_model->bones.empty()) ? L"Ignoring model bones" : L"";
+                }
+
                 wchar_t szState[128] = {};
-                swprintf_s(szState, L"%ls    Tone-mapping operator: %ls", mode, toneMap);
+                swprintf_s(szState, L"%-20ls    Tone-mapping operator: %-12ls    %ls", mode, toneMap, viewMode);
 
                 wchar_t szMode[64] = {};
                 swprintf_s(szMode, L" %ls (Sensitivity: %8.4f)", (m_fpscamera) ? L"  FPS" : L"Orbit", m_sensitivity);
@@ -1004,6 +1000,7 @@ void Game::OnDeviceLost()
     m_model.reset();
     m_fxFactory.reset();
     m_pbrFXFactory.reset();
+    m_bones.reset();
 
     m_states.reset();
     m_lineEffect.reset();
@@ -1031,6 +1028,7 @@ void Game::OnDeviceRestored()
 
 void Game::LoadModel()
 {
+    m_bones.reset();
     m_model.reset();
     m_fxFactory.reset();
     m_pbrFXFactory.reset();
@@ -1038,6 +1036,8 @@ void Game::LoadModel()
     *m_szStatus = 0;
     *m_szError = 0;
     m_reloadModel = false;
+    m_boneMode = false;
+    m_skinning = false;
     m_modelRot = Quaternion::Identity;
 
     if (!*m_szModelName)
@@ -1112,12 +1112,13 @@ void Game::LoadModel()
             if (_wcsicmp(ext, L".sdkmesh") == 0)
             {
                 ModelLoaderFlags flags = m_lhcoords ? ModelLoader_CounterClockwise : ModelLoader_Clockwise;
-                flags |= ModelLoader_DisableSkinning;
+                flags |= ModelLoader_IncludeBones;
                 m_model = Model::CreateFromSDKMESH(device, modelBin.data(), modelBin.size(), *fxFactory, flags);
             }
             else if (_wcsicmp(ext, L".cmo") == 0)
             {
                 ModelLoaderFlags flags = m_lhcoords ? ModelLoader_Clockwise : ModelLoader_CounterClockwise;
+                flags |= ModelLoader_IncludeBones;
                 m_model = Model::CreateFromCMO(device, modelBin.data(), modelBin.size(), *fxFactory, flags);
             }
             else if (_wcsicmp(ext, L".vbo") == 0)
@@ -1148,6 +1149,11 @@ void Game::LoadModel()
 
     if (m_model)
     {
+        if (!m_model->bones.empty())
+        {
+            m_bones = ModelBone::MakeArray(m_model->bones.size());
+        }
+
         size_t nmeshes = 0;
         size_t nverts = 0;
         size_t nfaces = 0;
@@ -1178,6 +1184,11 @@ void Game::LoadModel()
                     nverts += (desc.ByteWidth / vertexStride);
 
                     vbs.insert(vbptr);
+                }
+
+                if (dynamic_cast<IEffectSkinning*>((*mit)->effect.get()) != nullptr)
+                {
+                    m_skinning = true;
                 }
             }
             ++nmeshes;
@@ -1375,6 +1386,19 @@ void Game::CycleToneMapOperator()
     {
         m_toneMapMode = ToneMapPostProcess::Saturate;
     }
+}
+
+void Game::CycleBoneRenderMode()
+{
+    if (!m_model
+        || m_model->bones.empty()
+        || m_boneMode)
+    {
+        m_boneMode = false;
+        return;
+    }
+
+    m_boneMode = true;
 }
 
 void Game::CreateProjection()

@@ -83,6 +83,7 @@ private:
 
     void CycleBackgroundColor();
     void CycleToneMapOperator();
+    void CycleBoneRenderMode();
 
     void CreateProjection();
 
@@ -112,11 +113,12 @@ private:
     std::unique_ptr<DirectX::CommonStates>          m_states;
     std::unique_ptr<DirectX::BasicEffect>           m_lineEffect;
     std::unique_ptr<DirectX::ToneMapPostProcess>    m_toneMap;
+    DirectX::ModelBone::TransformArray              m_bones;
 
     Microsoft::WRL::ComPtr<ID3D11InputLayout>       m_lineLayout;
     std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionColor>>  m_lineBatch;
 
-    static const size_t s_nIBL = 3;
+    static constexpr size_t s_nIBL = 3;
 
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_radianceIBL[s_nIBL];
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_irradianceIBL[s_nIBL];
@@ -160,6 +162,8 @@ private:
     bool                                            m_reloadModel;
     bool                                            m_lhcoords;
     bool                                            m_fpscamera;
+    bool                                            m_boneMode;
+    bool                                            m_skinning;
 
     int                                             m_toneMapMode;
 
