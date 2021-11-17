@@ -111,8 +111,7 @@ void DeviceResources::CreateWindowSizeDependentResources()
     }
 
     // Clear the previous window size specific context.
-    ID3D11RenderTargetView* nullViews[] = {nullptr, nullptr};
-    m_d3dContext->OMSetRenderTargets(_countof(nullViews), nullViews, nullptr);
+    m_d3dContext->OMSetRenderTargets(0, nullptr, nullptr);
     m_d3dRenderTargetView.Reset();
     m_d3dDepthStencilView.Reset();
     m_renderTarget.Reset();
