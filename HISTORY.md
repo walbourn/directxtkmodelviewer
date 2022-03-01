@@ -4,6 +4,11 @@ Release available for download on [GitHub](https://github.com/walbourn/directxtk
 
 ## Release History
 
+## February 28, 2022
+* Updated for February 2022 release of DirectX Tool Kit
+* Update to fix HDR10 handling on PC
+* Code cleanup
+
 ## October 18, 2021
 * Added model bone rendering modes (skinned / rigid-body vs. world)
 * Fixed loading of skinned models for SDKMESH v2
