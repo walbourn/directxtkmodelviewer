@@ -48,7 +48,7 @@ void RenderTexture::SetDevice(_In_ ID3D11Device* device)
             throw std::runtime_error("CheckFormatSupport");
         }
 
-        UINT32 required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+        constexpr UINT32 required = D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_RENDER_TARGET;
         if ((formatSupport & required) != required)
         {
 #ifdef _DEBUG
@@ -164,8 +164,8 @@ void RenderTexture::EndScene(_In_ ID3D11DeviceContextX* context)
 void RenderTexture::SetWindow(const RECT& output)
 {
     // Determine the render target size in pixels.
-    auto width = size_t(std::max<LONG>(output.right - output.left, 1));
-    auto height = size_t(std::max<LONG>(output.bottom - output.top, 1));
+    auto const width = size_t(std::max<LONG>(output.right - output.left, 1));
+    auto const height = size_t(std::max<LONG>(output.bottom - output.top, 1));
 
     SizeResources(width, height);
 }

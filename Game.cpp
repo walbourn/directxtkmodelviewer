@@ -550,7 +550,7 @@ void Game::Render()
     {
         m_spriteBatch->Begin();
 
-        RECT rct = Viewport::ComputeTitleSafeArea(size.right, size.bottom);
+        const RECT rct = Viewport::ComputeTitleSafeArea(size.right, size.bottom);
 
         float spacing = m_fontComic->GetLineSpacing();
 
@@ -726,7 +726,7 @@ void Game::Render()
                 float spacing = m_fontConsolas->GetLineSpacing();
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
-                RECT rct = Viewport::ComputeTitleSafeArea(size.right, size.bottom);
+                const RECT rct = Viewport::ComputeTitleSafeArea(size.right, size.bottom);
 
                 m_fontConsolas->DrawString(m_spriteBatch.get(), m_szStatus, XMFLOAT2(float(rct.left), float(rct.top)), m_uiColor);
                 m_fontConsolas->DrawString(m_spriteBatch.get(), szCamera, XMFLOAT2(float(rct.left), float(rct.top + spacing)), m_uiColor);
@@ -812,7 +812,7 @@ void Game::Clear()
 
     context->OMSetRenderTargets(1, &renderTarget, depthStencil);
 
-    auto viewport = m_deviceResources->GetScreenViewport();
+    auto const viewport = m_deviceResources->GetScreenViewport();
     context->RSSetViewports(1, &viewport);
 }
 #pragma endregion
@@ -853,8 +853,13 @@ void Game::OnResuming()
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
 void Game::OnWindowMoved()
 {
-    auto r = m_deviceResources->GetOutputSize();
+    auto const r = m_deviceResources->GetOutputSize();
     m_deviceResources->WindowSizeChanged(r.right, r.bottom);
+}
+
+void Game::OnDisplayChange()
+{
+    m_deviceResources->UpdateColorSpace();
 }
 
 void Game::OnWindowSizeChanged(int width, int height)
