@@ -9,6 +9,10 @@
 
 #pragma once
 
+#pragma warning(disable : 4619 4616 26812)
+// C4619/4616 #pragma warning warnings
+// 26812: The enum type 'x' is unscoped. Prefer 'enum class' over 'enum' (Enum.3).
+
 // Use the C++ standard templated min/max
 #define NOMINMAX
 
@@ -52,9 +56,12 @@
 #include <DirectXColors.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <cwchar>
 #include <exception>
 #include <iterator>
@@ -62,6 +69,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <vector>
 
