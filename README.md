@@ -4,15 +4,15 @@
 
 Copyright (c) Microsoft Corporation.
 
-**February 28, 2022**
+**March 22, 2022**
 
 The DirectX Tool Kit Model Viewer is an interactive test application for validating ``.SDKMESH``, ``.VBO``, and ``.CMO`` files rendered using the DirectX Tool Kit.
 
-This code is designed to build with Visual Studio 2017 ([15.9](https://walbourn.github.io/vs-2017-15-9-update/)).
+This code is designed to build with Visual Studio 2017 ([15.9](https://walbourn.github.io/vs-2017-15-9-update/)) or VS 2019 (16.4 or later).
 
 ## Notices
 
-All content and source code for this package are subject to the terms of the [MIT License](http://opensource.org/licenses/MIT).
+All content and source code for this package are subject to the terms of the [MIT License](https://github.com/walbourn/directxtkmodelviewer/blob/main/LICENSE).
 
 For the latest version of the Model Viewer for DirectX Tool Kit, bug reports and feature requests,
 please visit the project site on [GitHub](http://aka.ms/directxtkmodelviewer).
@@ -21,11 +21,11 @@ please visit the project site on [GitHub](http://aka.ms/directxtkmodelviewer).
 
 ### PC
 
-Run VS 2017
+Run VS 2019
 
-Open Project/Solution... ``DirectXTKModelViewer_Desktop_201?.sln``
+Open Project/Solution... ``DirectXTKModelViewer_Desktop_2019.sln``
 
-Ensure ``DirectXTKModelViewer_Desktop_201?`` is the "StartUp Project"
+Ensure ``DirectXTKModelViewer_Desktop_2019`` is the "StartUp Project"
 
 Build and Run (F5)
 
@@ -33,9 +33,9 @@ Build and Run (F5)
 
 Run VS 2017
 
-Open Project/Solution... ``DirectXTKModelViewer_XDK_201?.sln``
+Open Project/Solution... ``DirectXTKModelViewer_XDK_2017.sln``
 
-Ensure ``DirectXTKModelViewer_XDK_201?`` is the "StartUp Project"
+Ensure ``DirectXTKModelViewer_XDK_2017`` is the "StartUp Project"
 
 Build and Run (F5) or use Deploy Solution
 
