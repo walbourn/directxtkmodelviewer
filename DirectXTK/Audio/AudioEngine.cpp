@@ -1428,7 +1428,10 @@ X3DAUDIO_HANDLE& AudioEngine::Get3DHandle() const noexcept
 #pragma comment(lib,"runtimeobject.lib")
 #pragma warning(push)
 #pragma warning(disable: 4471 5204)
-#include <windows.devices.enumeration.h>
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wnonportable-system-include-path"
+#endif
+#include <Windows.Devices.Enumeration.h>
 #pragma warning(pop)
 #include <wrl.h>
 #endif
