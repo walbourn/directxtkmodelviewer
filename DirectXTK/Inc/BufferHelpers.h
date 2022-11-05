@@ -69,13 +69,13 @@ namespace DirectX
         unsigned int bindFlags = D3D11_BIND_SHADER_RESOURCE) noexcept;
 
     HRESULT __cdecl CreateTextureFromMemory(
-#if defined(_XBOX_ONE) && defined(_TITLE)
+    #if defined(_XBOX_ONE) && defined(_TITLE)
         _In_ ID3D11DeviceX* d3dDeviceX,
         _In_ ID3D11DeviceContextX* d3dContextX,
-#else
+    #else
         _In_ ID3D11Device* device,
         _In_ ID3D11DeviceContext* d3dContext,
-#endif
+    #endif
         size_t width, size_t height,
         DXGI_FORMAT format,
         const D3D11_SUBRESOURCE_DATA& initData,
@@ -91,18 +91,21 @@ namespace DirectX
         unsigned int bindFlags = D3D11_BIND_SHADER_RESOURCE) noexcept;
 
     // Strongly typed wrapper around a Direct3D constant buffer.
-    namespace Internal
+    inline namespace DX11
     {
-        // Base class, not to be used directly: clients should access this via the derived PrimitiveBatch<T>.
-        class ConstantBufferBase
+        namespace Private
         {
-        protected:
-            void __cdecl CreateBuffer(_In_ ID3D11Device* device, size_t bytes, _Outptr_ ID3D11Buffer** pBuffer);
-        };
+            // Base class, not to be used directly: clients should access this via the derived PrimitiveBatch<T>.
+            class ConstantBufferBase
+            {
+            protected:
+                void __cdecl CreateBuffer(_In_ ID3D11Device* device, size_t bytes, _Outptr_ ID3D11Buffer** pBuffer);
+            };
+        }
     }
 
     template<typename T>
-    class ConstantBuffer : public Internal::ConstantBufferBase
+    class ConstantBuffer : public DX11::Private::ConstantBufferBase
     {
     public:
         // Constructor.
@@ -124,7 +127,7 @@ namespace DirectX
         }
 
         // Writes new data into the constant buffer.
-#if defined(_XBOX_ONE) && defined(_TITLE)
+    #if defined(_XBOX_ONE) && defined(_TITLE)
         void __cdecl SetData(_In_ ID3D11DeviceContext* deviceContext, T const& value, void** grfxMemory)
         {
             assert(grfxMemory != nullptr);
@@ -136,7 +139,7 @@ namespace DirectX
 
             *grfxMemory = ptr;
         }
-#else
+    #else
 
         void __cdecl SetData(_In_ ID3D11DeviceContext* deviceContext, T const& value) noexcept
         {
@@ -150,7 +153,7 @@ namespace DirectX
                 deviceContext->Unmap(mConstantBuffer.Get(), 0);
             }
         }
-#endif // _XBOX_ONE && _TITLE
+    #endif // _XBOX_ONE && _TITLE
 
         // Looks up the underlying D3D constant buffer.
         ID3D11Buffer* GetBuffer() const noexcept { return mConstantBuffer.Get(); }

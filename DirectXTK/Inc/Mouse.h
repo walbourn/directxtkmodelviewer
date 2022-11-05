@@ -10,10 +10,22 @@
 
 #pragma once
 
-#if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)) || (defined(_XBOX_ONE) && defined(_TITLE))
-#ifndef USING_COREWINDOW
+#if !defined(USING_XINPUT) && !defined(USING_GAMEINPUT) && !defined(USING_COREWINDOW)
+
+#ifdef _GAMING_DESKTOP
+#include <grdk.h>
+#endif
+
+#if (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_GAMES)) || (defined(_GAMING_DESKTOP) && (_GRDK_EDITION >= 220600))
+#define USING_GAMEINPUT
+#elif (defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)) || (defined(_XBOX_ONE) && defined(_TITLE))
 #define USING_COREWINDOW
 #endif
+
+#endif // !USING_XINPUT && !USING_GAMEINPUT && !USING_WINDOWS_GAMING_INPUT
+
+#if defined(USING_GAMEINPUT) && !defined(_GAMING_XBOX)
+#pragma comment(lib,"gameinput.lib")
 #endif
 
 #include <memory>
@@ -79,7 +91,7 @@ namespace DirectX
             ButtonState xButton1;
             ButtonState xButton2;
 
-            #pragma prefast(suppress: 26495, "Reset() performs the initialization")
+        #pragma prefast(suppress: 26495, "Reset() performs the initialization")
             ButtonStateTracker() noexcept { Reset(); }
 
             void __cdecl Update(const State& state) noexcept;
@@ -130,9 +142,9 @@ namespace DirectX
         void __cdecl SetWindow(HWND window);
         static void __cdecl ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
-#ifdef _GAMING_XBOX
+    #ifdef _GAMING_XBOX
         static void __cdecl SetResolution(float scale);
-#endif
+    #endif
     #endif
 
         // Singleton
