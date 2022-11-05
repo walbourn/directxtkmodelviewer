@@ -45,12 +45,14 @@ Game::Game() noexcept(false) :
     m_usingGamepad(false),
     m_wireframe(false),
     m_ccw(false),
+    m_lighting(true),
     m_reloadModel(false),
     m_lhcoords(true),
     m_fpscamera(false),
     m_boneMode(false),
     m_skinning(false),
     m_toneMapMode(ToneMapPostProcess::Reinhard),
+    m_updateEffects(false),
     m_selectFile(0),
     m_firstFile(0)
 {
@@ -264,13 +266,15 @@ void Game::Update(DX::StepTimer const& timer)
 
             if (m_gamepadButtonTracker.b == GamePad::ButtonStateTracker::PRESSED)
             {
-                int value = ((int)m_ccw << 1) | ((int)m_wireframe);
+                int value = ((int)m_wireframe << 2) | ((int)!m_ccw << 1) | ((int)!m_lighting);
 
                 value = value + 1;
-                if (value >= 3) value = 0;
+                if (value > 5) value = 0;
+                // Don't care about wireframe+ccw; only wireframe+lighting
 
-                m_wireframe = (value & 0x1) != 0;
-                m_ccw       = (value & 0x2) != 0;
+                m_lighting  = (value & 0x1) == 0;
+                m_ccw       = (value & 0x2) == 0;
+                m_wireframe = (value & 0x4) != 0;
             }
 
             if (m_gamepadButtonTracker.x == GamePad::ButtonStateTracker::PRESSED)
@@ -410,6 +414,12 @@ void Game::Update(DX::StepTimer const& timer)
         if (m_keyboardTracker.pressed.R)
             m_wireframe = !m_wireframe;
 
+        if (m_keyboardTracker.pressed.L)
+        {
+            m_updateEffects = true;
+            m_lighting = !m_lighting;
+        }
+
         if (m_keyboardTracker.pressed.B && !m_wireframe)
             m_ccw = !m_ccw;
 
@@ -541,6 +551,38 @@ void Game::Render()
     // Don't try to render anything before the first Update.
     if (m_timer.GetFrameCount() == 0)
         return;
+
+    if (m_updateEffects)
+    {
+        m_updateEffects = false;
+
+        if (m_model)
+        {
+            bool resetlayouts = false;
+            m_model->UpdateEffects([&](IEffect* effect)
+                {
+                    auto fx = dynamic_cast<BasicEffect*>(effect);
+                    if (fx)
+                    {
+                        fx->SetLightingEnabled(m_lighting);
+                        resetlayouts = true;
+                    }
+                });
+
+            if (resetlayouts)
+            {
+                auto device = m_deviceResources->GetD3DDevice();
+
+                for (auto& it : m_model->meshes)
+                {
+                    for (auto& mit : it->meshParts)
+                    {
+                        mit->CreateInputLayout(device, mit->effect.get(), mit->inputLayout.ReleaseAndGetAddressOf());
+                    }
+                }
+            }
+        }
+    }
 
     Clear();
 
@@ -716,7 +758,8 @@ void Game::Render()
                 }
 
                 wchar_t szState[128] = {};
-                swprintf_s(szState, L"%-20ls    Tone-mapping operator: %-12ls    %ls", mode, toneMap, viewMode);
+                swprintf_s(szState, L"%-20ls    Tone-mapping operator: %-12ls    %ls    %ls", mode, toneMap, viewMode,
+                    m_lighting ? L"" : L"Lighting Off");
 
                 wchar_t szMode[64] = {};
                 swprintf_s(szMode, L" %ls (Sensitivity: %8.4f)", (m_fpscamera) ? L"  FPS" : L"Orbit", m_sensitivity);

@@ -71,6 +71,7 @@ If no controller is plugged in, you can use keyboard & mouse controls. If you pr
     H toggles HUD display
     J toggles the cross display
     R toggles wireframe
+    L toggles lighting vs. unlit (BasicEffect only)
     T cycles tone-mapping operator
     N cycles bone rendering mode (World vs. Rigid/Skinnned)
 
@@ -92,7 +93,7 @@ For Xbox One, only the gamepad controls are available. When you press the "View"
 #### GamePad
 
     A - Change modes Orbit vs. FPS
-    B - Toggles wireframe/culling mode
+    B - Toggles wireframe/culling/lighting mode
     X - Cycles grid, viewpoint cross, and HUD display
     Y - Cycle background color
     Menu - Cycle tone-mapping operator

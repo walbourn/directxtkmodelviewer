@@ -160,6 +160,7 @@ private:
     bool                                            m_usingGamepad;
     bool                                            m_wireframe;
     bool                                            m_ccw;
+    bool                                            m_lighting;
     bool                                            m_reloadModel;
     bool                                            m_lhcoords;
     bool                                            m_fpscamera;
@@ -167,6 +168,7 @@ private:
     bool                                            m_skinning;
 
     int                                             m_toneMapMode;
+    bool                                            m_updateEffects;
 
     wchar_t                                         m_szModelName[MAX_PATH];
     wchar_t                                         m_szStatus[ 512 ];
