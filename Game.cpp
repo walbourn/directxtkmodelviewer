@@ -109,7 +109,9 @@ void Game::Tick()
         Update(m_timer);
     });
 
-   Render();
+    m_mouse->EndOfInputFrame();
+
+    Render();
 }
 
 // Updates the world
