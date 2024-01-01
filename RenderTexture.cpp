@@ -22,9 +22,6 @@ using namespace DX;
 using Microsoft::WRL::ComPtr;
 
 RenderTexture::RenderTexture(DXGI_FORMAT format) noexcept :
-#if defined(_XBOX_ONE) && defined(_TITLE)
-    m_fastSemantics(false),
-#endif
     m_format(format),
     m_width(0),
     m_height(0)
@@ -61,10 +58,6 @@ void RenderTexture::SetDevice(_In_ ID3D11Device* device)
     }
 
     m_device = device;
-
-#if defined(_XBOX_ONE) && defined(_TITLE)
-    m_fastSemantics = (device->GetCreationFlags() & D3D11_CREATE_DEVICE_IMMEDIATE_CONTEXT_FAST_SEMANTICS) != 0;
-#endif
 }
 
 
@@ -141,25 +134,6 @@ void RenderTexture::ReleaseDevice() noexcept
 
     m_width = m_height = 0;
 }
-
-#if defined(_XBOX_ONE) && defined(_TITLE)
-void RenderTexture::EndScene(_In_ ID3D11DeviceContextX* context)
-{
-    if (m_fastSemantics)
-    {
-        context->FlushGpuCacheRange(
-            D3D11_FLUSH_ENSURE_CB0_COHERENCY
-            | D3D11_FLUSH_COLOR_BLOCK_INVALIDATE
-            | D3D11_FLUSH_TEXTURE_L1_INVALIDATE
-            | D3D11_FLUSH_TEXTURE_L2_INVALIDATE,
-            nullptr, D3D11_FLUSH_GPU_CACHE_RANGE_ALL);
-        context->DecompressResource(m_renderTarget.Get(), 0, nullptr,
-            m_renderTarget.Get(), 0, nullptr,
-            m_format, D3D11X_DECOMPRESS_PROPAGATE_COLOR_CLEAR);
-    }
-}
-#endif
-
 
 void RenderTexture::SetWindow(const RECT& output)
 {

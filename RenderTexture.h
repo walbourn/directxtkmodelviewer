@@ -28,16 +28,11 @@ namespace DX
         RenderTexture(RenderTexture const&) = delete;
         RenderTexture& operator= (RenderTexture const&) = delete;
 
-
         void SetDevice(_In_ ID3D11Device* device);
 
         void SizeResources(size_t width, size_t height);
 
         void ReleaseDevice() noexcept;
-
-#if defined(_XBOX_ONE) && defined(_TITLE)
-        void EndScene(_In_ ID3D11DeviceContextX* context);
-#endif
 
         void SetWindow(const RECT& rect);
 
@@ -52,9 +47,6 @@ namespace DX
         Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_renderTarget;
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView>      m_renderTargetView;
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>    m_shaderResourceView;
-#if defined(_XBOX_ONE) && defined(_TITLE)
-        bool                                                m_fastSemantics;
-#endif
 
         DXGI_FORMAT                                         m_format;
 
