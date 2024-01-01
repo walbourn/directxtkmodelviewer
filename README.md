@@ -4,11 +4,11 @@
 
 Copyright (c) Microsoft Corporation.
 
-**February 11, 2023**
+**December 31, 2023**
 
 The DirectX Tool Kit Model Viewer is an interactive test application for validating ``.SDKMESH``, ``.VBO``, and ``.CMO`` files rendered using the DirectX Tool Kit.
 
-This code is designed to build with Visual Studio 2017 ([15.9](https://walbourn.github.io/vs-2017-15-9-update/)) or VS 2019 (16.11).
+This code is designed to build with Visual Studio VS 2019 (16.11) or later.
 
 ## Notices
 
@@ -19,8 +19,6 @@ please visit the project site on [GitHub](http://aka.ms/directxtkmodelviewer).
 
 ## Build Instructions
 
-### PC
-
 Run VS 2019
 
 Open Project/Solution... ``DirectXTKModelViewer_Desktop_2019.sln``
@@ -28,20 +26,6 @@ Open Project/Solution... ``DirectXTKModelViewer_Desktop_2019.sln``
 Ensure ``DirectXTKModelViewer_Desktop_2019`` is the "StartUp Project"
 
 Build and Run (F5)
-
-### Xbox One
-
-Run VS 2017
-
-Open Project/Solution... ``DirectXTKModelViewer_XDK_2017.sln``
-
-Ensure ``DirectXTKModelViewer_XDK_2017`` is the "StartUp Project"
-
-Build and Run (F5) or use Deploy Solution
-
-> On supported platforms, you can use the -render4K command-line option.
-
-## Usage
 
 ### PC
 
@@ -85,10 +69,6 @@ If no controller is plugged in, you can use keyboard & mouse controls. If you pr
     Home key resets camera to default position
 
     End key resets model to default rotation
-
-### Xbox One
-
-For Xbox One, only the gamepad controls are available. When you press the "View" button, the tool enumerates the .SDKMESH, .CMO, and .VBO files in the root of the D:\ drive and allows you to select one of them to load.
 
 #### GamePad
 
@@ -140,13 +120,6 @@ For Xbox One, only the gamepad controls are available. When you press the "View"
               U - Translate Forward
               D - Translate Back
               Click - cycles bone rendering mode
-
-For Xbox One, after you start up the viewer app, you can use the Xbox One XDK command prompt to copy data files to
-the system:
-
-```
-xbcp /x/title <source directory> xd:\
-```
 
 ## Contributing
 

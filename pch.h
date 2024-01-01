@@ -17,10 +17,7 @@
 #define NOMINMAX
 
 #if defined(_XBOX_ONE) && defined(_TITLE)
-
-#include <xdk.h>
-#include <d3d11_x.h>
-
+#error Support for Xbox One has been retired.
 #else
 
 #include <winsdkver.h>

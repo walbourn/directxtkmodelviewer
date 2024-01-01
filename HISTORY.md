@@ -4,6 +4,10 @@ Release available for download on [GitHub](https://github.com/walbourn/directxtk
 
 ## Release History
 
+### December 31, 2023
+* Updated for December 2023 release of DirectX Tool Kit
+* Retire legacy Xbox One XDK support
+
 ### November 5, 2022
 * Updated for October 2022 release of DirectX Tool Kit
 * Added lighting vs. unlit toggle
