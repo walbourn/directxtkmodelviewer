@@ -4,7 +4,7 @@
 
 Copyright (c) Microsoft Corporation.
 
-**December 31, 2023**
+**June 4, 2024**
 
 The DirectX Tool Kit Model Viewer is an interactive test application for validating ``.SDKMESH``, ``.VBO``, and ``.CMO`` files rendered using the DirectX Tool Kit.
 
