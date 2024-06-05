@@ -44,6 +44,10 @@ namespace
     {
         const GUID&         wic;
         DXGI_FORMAT         format;
+
+        constexpr WICTranslate(const GUID& wg, DXGI_FORMAT fmt) noexcept :
+            wic(wg),
+            format(fmt) {}
     };
 
     constexpr WICTranslate g_WICFormats[] =
@@ -78,6 +82,10 @@ namespace
     {
         const GUID& source;
         const GUID& target;
+
+        constexpr WICConvert(const GUID& src, const GUID& tgt) noexcept :
+            source(src),
+            target(tgt) {}
     };
 
     constexpr WICConvert g_WICConvert[] =
@@ -186,7 +194,7 @@ namespace DirectX
 {
     inline namespace DX11
     {
-        namespace Internal
+        namespace ToolKitInternal
         {
             bool IsWIC2() noexcept;
             IWICImagingFactory* GetWIC() noexcept;
@@ -195,12 +203,12 @@ namespace DirectX
     }
 }
 
-bool DirectX::DX11::Internal::IsWIC2() noexcept
+bool DirectX::DX11::ToolKitInternal::IsWIC2() noexcept
 {
     return g_WIC2;
 }
 
-IWICImagingFactory* DirectX::DX11::Internal::GetWIC() noexcept
+IWICImagingFactory* DirectX::DX11::ToolKitInternal::GetWIC() noexcept
 {
     static INIT_ONCE s_initOnce = INIT_ONCE_STATIC_INIT;
 
@@ -217,7 +225,7 @@ IWICImagingFactory* DirectX::DX11::Internal::GetWIC() noexcept
     return factory;
 }
 
-using namespace DirectX::DX11::Internal;
+using namespace DirectX::DX11::ToolKitInternal;
 
 namespace
 {
@@ -746,22 +754,13 @@ namespace
         if (texture || textureView)
         {
         #if defined(_XBOX_ONE) && defined(_TITLE)
-            const wchar_t* pstrName = wcsrchr(fileName, '\\');
-            if (!pstrName)
-            {
-                pstrName = fileName;
-            }
-            else
-            {
-                pstrName++;
-            }
             if (texture && *texture)
             {
-                (*texture)->SetName(pstrName);
+                (*texture)->SetName(fileName);
             }
             if (textureView && *textureView)
             {
-                (*textureView)->SetName(pstrName);
+                (*textureView)->SetName(fileName);
             }
         #else
             CHAR strFileA[MAX_PATH];
@@ -776,29 +775,19 @@ namespace
             );
             if (result > 0)
             {
-                const char* pstrName = strrchr(strFileA, '\\');
-                if (!pstrName)
-                {
-                    pstrName = strFileA;
-                }
-                else
-                {
-                    pstrName++;
-                }
-
                 if (texture && *texture)
                 {
                     (*texture)->SetPrivateData(WKPDID_D3DDebugObjectName,
-                        static_cast<UINT>(strnlen_s(pstrName, MAX_PATH)),
-                        pstrName
+                        static_cast<UINT>(result),
+                        strFileA
                     );
                 }
 
                 if (textureView && *textureView)
                 {
                     (*textureView)->SetPrivateData(WKPDID_D3DDebugObjectName,
-                        static_cast<UINT>(strnlen_s(pstrName, MAX_PATH)),
-                        pstrName
+                        static_cast<UINT>(result),
+                        strFileA
                     );
                 }
             }
