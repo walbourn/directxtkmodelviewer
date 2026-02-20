@@ -21,7 +21,11 @@
 #else
 
 #include <winsdkver.h>
+#ifdef _M_ARM64
+#define _WIN32_WINNT 0x0A00
+#else
 #define _WIN32_WINNT 0x0603
+#endif
 #include <sdkddkver.h>
 
 // DirectX apps don't need GDI

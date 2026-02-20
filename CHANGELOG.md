@@ -9,7 +9,7 @@ Release available for download on [GitHub](https://github.com/walbourn/directxtk
 * Converted to use vcpkg manifest mode to get *DirectX Tool Kit*
   * Currently set to October 2025
 * Retired VS 2019, added VS 2022 project
-* Removed x86/32-bit
+* Removed x86/32-bit, added ARM64
 * Builds for Windows 8.1 minimum
 
 ### June 4, 2024
