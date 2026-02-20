@@ -32,3 +32,4 @@ Release
 x64
 /wiki
 packages
+/vcpkg_installed

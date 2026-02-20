@@ -21,7 +21,11 @@
 #else
 
 #include <winsdkver.h>
-#define _WIN32_WINNT 0x0601
+#ifdef _M_ARM64
+#define _WIN32_WINNT 0x0A00
+#else
+#define _WIN32_WINNT 0x0603
+#endif
 #include <sdkddkver.h>
 
 // DirectX apps don't need GDI
@@ -99,17 +103,18 @@ namespace DX
     }
 }
 
-#include <CommonStates.h>
-#include <DDSTextureLoader.h>
-#include <Effects.h>
-#include <GamePad.h>
-#include <GraphicsMemory.h>
-#include <Keyboard.h>
-#include <Model.h>
-#include <Mouse.h>
-#include <PostProcess.h>
-#include <PrimitiveBatch.h>
-#include <SimpleMath.h>
-#include <SpriteBatch.h>
-#include <SpriteFont.h>
-#include <VertexTypes.h>
+#define DIRECTX_TOOLKIT_IMPORT
+#include <directxtk/CommonStates.h>
+#include <directxtk/DDSTextureLoader.h>
+#include <directxtk/Effects.h>
+#include <directxtk/GamePad.h>
+#include <directxtk/GraphicsMemory.h>
+#include <directxtk/Keyboard.h>
+#include <directxtk/Model.h>
+#include <directxtk/Mouse.h>
+#include <directxtk/PostProcess.h>
+#include <directxtk/PrimitiveBatch.h>
+#include <directxtk/SimpleMath.h>
+#include <directxtk/SpriteBatch.h>
+#include <directxtk/SpriteFont.h>
+#include <directxtk/VertexTypes.h>

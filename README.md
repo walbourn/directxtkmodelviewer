@@ -4,11 +4,11 @@
 
 Copyright (c) Microsoft Corporation.
 
-**June 4, 2024**
+**Februry 2026**
 
 The DirectX Tool Kit Model Viewer is an interactive test application for validating ``.SDKMESH``, ``.VBO``, and ``.CMO`` files rendered using the DirectX Tool Kit.
 
-This code is designed to build with Visual Studio VS 2019 (16.11) or later.
+This code is designed to build with Visual Studio VS 2022 (17.6) or later.
 
 ## Notices
 
@@ -19,11 +19,11 @@ please visit the project site on [GitHub](http://aka.ms/directxtkmodelviewer).
 
 ## Build Instructions
 
-Run VS 2019
+Run VS 2022
 
-Open Project/Solution... ``DirectXTKModelViewer_Desktop_2019.sln``
+Open Project/Solution... ``DirectXTKModelViewer_Desktop_2022.sln``
 
-Ensure ``DirectXTKModelViewer_Desktop_2019`` is the "StartUp Project"
+Ensure ``DirectXTKModelViewer_Desktop_2022`` is the "StartUp Project"
 
 Build and Run (F5)
 
@@ -120,6 +120,12 @@ If no controller is plugged in, you can use keyboard & mouse controls. If you pr
               U - Translate Forward
               D - Translate Back
               Click - cycles bone rendering mode
+
+## Release Notes
+
+FOR SECURITY ADVISORIES, see [GitHub](https://github.com/walbourn/directxtkmodelviewer/security/advisories).
+
+For a full change history, see [CHANGELOG.md](https://github.com/walbourn/directxtkmodelviewer/blob/main/CHANGELOG.md).
 
 ## Contributing
 

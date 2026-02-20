@@ -10,6 +10,9 @@
     <Filter Include="Utilities">
       <UniqueIdentifier>{e47eeb39-d080-4f30-88f6-622ab5992070}</UniqueIdentifier>
     </Filter>
+    <Filter Include="vcpkg">
+      <UniqueIdentifier>{69fdcdd1-22ca-4339-b6eb-8501ee68b0fc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StepTimer.h">
@@ -56,6 +59,12 @@
     </None>
     <None Include="consolas4k.spritefont">
       <Filter>Assets</Filter>
+    </None>
+    <None Include="vcpkg-configuration.json">
+      <Filter>vcpkg</Filter>
+    </None>
+    <None Include="vcpkg.json">
+      <Filter>vcpkg</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

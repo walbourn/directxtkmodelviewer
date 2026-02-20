@@ -25,8 +25,8 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
-    const XMVECTORF32 c_Gray = { 0.215861f, 0.215861f, 0.215861f, 1.f };
-    const XMVECTORF32 c_CornflowerBlue = { 0.127438f, 0.300544f, 0.846873f, 1.f };
+    constexpr XMVECTORF32 c_Gray = { 0.215861f, 0.215861f, 0.215861f, 1.f };
+    constexpr XMVECTORF32 c_CornflowerBlue = { 0.127438f, 0.300544f, 0.846873f, 1.f };
 }
 
 // Constructor.
