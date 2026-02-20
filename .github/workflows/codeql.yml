@@ -41,7 +41,7 @@ jobs:
       - name: 'Build'
         working-directory: ${{ github.workspace }}
         run: >
-          msbuild /m /p:Configuration=${{ matrix.build_type }} /p:Platform=${{ matrix.platform }}
+          msbuild /m /p:Configuration=Debug /p:Platform=x64
           DirectXTKModelViewer_Desktop_2022.sln
 
       - name: Perform CodeQL Analysis
